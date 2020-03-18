@@ -31,20 +31,20 @@
             <div class="message">提示：请在以下区域绘制签名！</div>
             <div class="sign-region">
               <canvas
-              id="canvas"
-              width="890"
-              height="350"
-              @mousedown="canvasDown($event)"
-              @mousemove="canvasMove($event)"
-              @mouseup="canvasUp($event)"
-              @mouseleave="canvasLeave($event)"
-              ref="canvas"
-            >抱歉，您的浏览器不支持canvas元素</canvas>
+                id="canvas"
+                width="890"
+                height="350"
+                @mousedown="canvasDown($event)"
+                @mousemove="canvasMove($event)"
+                @mouseup="canvasUp($event)"
+                @mouseleave="canvasLeave($event)"
+                ref="canvas"
+              >抱歉，您的浏览器不支持canvas元素</canvas>
             </div>
             <Row>
-                <Col span="12">
-                    <ColorPicker @on-change="changeColor" v-model="defortColor" recommend />
-                </Col>
+              <Col span="12">
+                <ColorPicker @on-change="changeColor" v-model="defortColor" recommend />
+              </Col>
             </Row>
           </div>
           <div class="footer">
@@ -54,20 +54,23 @@
         </div>
       </div>
     </div>
+    <vfooter class="footer"></vfooter>
   </div>
 </template>
 
 <script>
 import vheader from "@/components/header.vue";
+import vfooter from "@/components/footer.vue";
 export default {
   components: {
-    vheader
+    vheader,
+    vfooter
   },
   data() {
     return {
       modalSign: false,
       canvasMoveUse: false,
-      defortColor: '#000000'
+      defortColor: "#000000"
     };
   },
   mounted() {
@@ -83,7 +86,8 @@ export default {
     canvasDown(e) {
       this.canvasMoveUse = true;
       const canvasX = e.clientX - e.target.offsetLeft;
-      const canvasY = e.clientY - e.target.offsetTop + document.documentElement.scrollTop;
+      const canvasY =
+        e.clientY - e.target.offsetTop + document.documentElement.scrollTop;
       this.ctx.beginPath(); // 移动的起点
       this.ctx.moveTo(canvasX, canvasY);
     },
@@ -111,13 +115,13 @@ export default {
     },
     okAdd() {},
     close() {
-      this.modalSign = false
+      this.modalSign = false;
       this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     },
     changeColor(value) {
-      this.defortColor = value
+      this.defortColor = value;
       this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
-      this.show()
+      this.show();
     }
   }
 };
@@ -126,11 +130,18 @@ export default {
 <style lang="less" scoped>
 .signAdmin {
   width: 100%;
-  height: 100%;
+  height: 100vh;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  .footer {
+    grid-row-start: 3;
+    grid-row-end: 3;
+  }
   .content {
     width: 1200px;
+    height: 79.8vh;
     margin: 0 auto;
-    padding-top: 60px;
+    padding-top: 30px;
     .title {
       font-size: 16px;
       color: #0e396f;
@@ -211,7 +222,7 @@ export default {
           h2 {
             font-size: 24px;
             text-align: center;
-            color: #0E396F;
+            color: #0e396f;
             font-weight: bold;
           }
         }

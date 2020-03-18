@@ -6,7 +6,7 @@
                 电子合同<span>{{title}}</span>
             </div>
             <ul class="out" v-if="flag">
-                <router-link tag="li" v-for="(item, index) in list" :key="index" :to="{ name: item.name }" :class="[sign == index ? 'color' : '', 'item']" @click="jump(index)">
+                <router-link tag="li" v-for="(item, index) in list" :key="index" :to="{ name: item.name }" :class="[sign == index ? 'color' : '', 'item']" @click="jump(index)" @mouseenter="enter(index)" @mouseleave="leave(index)">
                     <img :src="item.urlc" alt="" v-if="sign == index">
                     <img :src="item.url" alt="" v-else>
                     {{item.text}}
@@ -67,7 +67,8 @@ export default {
                 //     urlc: require('../assets/img/home/head.png'),
                 //     name: ''
                 // },
-            ]
+            ],
+            nowIndex: 0,
         }
     },
     created() {
@@ -100,6 +101,15 @@ export default {
     methods: {
         jump(index) {
             this.sign = index
+        },
+        enter(index) {
+            console.log(this.sign)
+            this.nowIndex = this.sign
+            this.sign = index
+        },
+        leave(index) {
+            console.log(this.sign)
+            this.sign = this.nowIndex
         },
         downClick(name) {
             if(name == '退出') {
