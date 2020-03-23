@@ -111,6 +111,7 @@
 
 <script>
 import vheader from "@/components/header.vue";
+import PDFJS from 'pdfjs-dist'
 export default {
   components: {
     vheader
@@ -194,6 +195,9 @@ export default {
       ]
     };
   },
+  created() {
+      console.log(PDFJS)
+  },
   methods: {
     add() {
       if (this.list.length < 10) {
@@ -210,7 +214,7 @@ export default {
       this.list.splice(index, 1);
     },
     next() {
-      console.log(this.list);
+      this.$router.push({name: 'signContract'})
     },
     okAdd() {},
     handleSelectAll(status) {
