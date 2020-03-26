@@ -27,7 +27,9 @@
         </div>
         <div class="signAdmin">
           <h2>签章管理</h2>
-          <div class="box"></div>
+          <div class="box">
+            <img src="../../assets/img/sign/sign.png" alt="">
+          </div>
         </div>
       </div>
       <div class="contract">

@@ -197,6 +197,8 @@ export default {
       }
     }
     .modalSign {
+      width: 100%;
+      height: 100%;
       position: fixed;
       top: 0;
       left: 0;
@@ -204,11 +206,14 @@ export default {
       right: 0;
       background-color: rgba(0, 0, 0, 0.6);
       z-index: 999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       .box {
         width: 950px;
         height: 670px;
-        margin: 0 auto;
-        margin-top: 200px;
+        // margin: 0 auto;
+        // margin-top: 200px;
         background-color: #fff;
         padding: 30px;
         border-radius: 6px;

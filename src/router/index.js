@@ -54,6 +54,16 @@ const routes = [
     name: 'startcontract',
     component: () => import('../views/contract/startcontract.vue')
   },
+  {
+    path: '/signContract',
+    name: 'signContract',
+    component: () => import('../views/contract/signContract.vue')
+  },
+  {
+    path: '/signDetails',
+    name: 'signDetails',
+    component: () => import('../views/contract/signDetails.vue')
+  },
 ]
 
 const router = new VueRouter({
