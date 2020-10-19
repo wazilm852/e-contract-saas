@@ -34,7 +34,8 @@
                         </FormItem>
                         <FormItem prop="code">
                             <Input v-model="formInlineM.code" maxlength="4" prefix="md-key" class="styleInput" @on-enter="handleSubmitM('formInlineM')" placeholder="请输入验证码" />
-                            <span class="get-code"><span>获取验证码</span></span>
+                            <span class="get-code" v-show='ifGet == true' @click='getCode'>获取验证码</span>
+                            <span class="get-code-c" v-show='ifGet == false'>{{codCount}}</span>
                         </FormItem>
                         <div class="bottom">
                             <div></div>
@@ -64,6 +65,8 @@ export default {
         };
         return {
             text: '短信登录',
+            ifGet: true,
+            codCount: 60,
             isPassword: true,
             isRemember: false,
             formInline: {
@@ -94,6 +97,15 @@ export default {
             },
         }
     },
+    created() {
+        var usePwd = JSON.parse(this.$vc.get('password'))
+        console.log(usePwd)
+        this.isRemember = this.$vc.get('password') ? usePwd.isRemember : false
+        if(this.isRemember) {
+            this.formInline.user = usePwd.phone
+            this.formInline.password = usePwd.password
+        }
+    },
     methods: {
         clickPassword() {
             this.isPassword = true
@@ -104,18 +116,43 @@ export default {
         handleSubmit(name) {
             this.$refs[name].validate((valid) => {
                 if (valid) {
-                    this.$router.push({name: 'home'})
-                } else {
-                    this.$Message.error('密码错误!');
+                    this.$api.login({
+                        phone: this.formInline.user,
+                        password: this.formInline.password,
+                        type: 'password',
+                    }).then(res=>{
+                        this.$store.dispatch('login',res.data)
+                        this.$vc.set('password',JSON.stringify({
+                            phone: this.formInline.user,
+                            password: this.formInline.password,
+                            isRemember: this.isRemember,
+                        }));
+                        if(res.code == 0) {
+                            this.$Message.success(res.msg);
+                            this.$router.push({name: 'home'})
+                        } else {
+                            this.$Message.error(res.msg);
+                        }
+                    })
                 }
             })
         },
         handleSubmitM(name) {
             this.$refs[name].validate((valid) => {
                 if (valid) {
-                    this.$router.push({name: 'home'})
-                } else {
-                    this.$Message.error('验证码不正确!');
+                    this.$api.login({
+                        phone: this.formInlineM.user,
+                        code: this.formInlineM.code,
+                        type: 'smscode',
+                    }).then(res=>{
+                        console.log(res)
+                        if(res.code == 0) {
+                            this.$Message.success(res.msg);
+                            this.$router.push({name: 'home'})
+                        } else {
+                            this.$Message.error(res.msg);
+                        }
+                    })
                 }
             })
         },
@@ -125,6 +162,30 @@ export default {
         toForget() {
             this.$router.push({name: 'forget'})
         },
+        getCode() {
+            if(!PHONE.test(this.formInlineM.user)) {
+                this.$Message.error('请输入正确的手机号!');
+            } else {
+                this.$api.getCode({
+                    phone: this.formInlineM.user
+                }).then(res=>{
+                    if(res.code == 0) {
+                        this.$Message.success(res.msg);
+                        this.ifGet = false
+                        var t = setInterval(()=> {
+                            this.codCount -- 
+                            if(this.codCount <= 0) {
+                                this.codCount = 60
+                                clearInterval(t)
+                                this.ifGet = true
+                            }
+                        }, 1000)
+                    } else {
+                        this.$Message.error(res.msg);
+                    }
+                })
+            }
+        }
     }
 }
 </script>
@@ -182,7 +243,7 @@ export default {
                     cursor: pointer;
                 }
                 .color{
-                    color:#135BB6;
+                    color:#127fd2;
                 }
                 .ivu-form-item{
                     margin-bottom: 30px;
@@ -192,7 +253,17 @@ export default {
                             right:10px;
                             top: 0px;
                             cursor: pointer;
-                            color:#135BB6;
+                            color:#127fd2;
+                            span{
+                                padding-left: 10px;
+                                border-left:1px solid #AAAAAA;
+                            }
+                        }
+                        .get-code-c{
+                            position: absolute;
+                            right:10px;
+                            top: 0px;
+                            color: #999;
                             span{
                                 padding-left: 10px;
                                 border-left:1px solid #AAAAAA;
@@ -206,7 +277,7 @@ export default {
                     .jump{
                         span{
                             cursor: pointer;
-                            color:#135BB6;
+                            color:#2981d9;
                         }
                     }
                 }
@@ -236,7 +307,7 @@ export default {
             .ivu-btn{
                 width: 200px;
                 height: 44px;
-                background-color: #135BB6;
+                background-color: #127fd2;
                 color:#fff;
                 border-radius:6px;
                 font-size: 20px;

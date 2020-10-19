@@ -3,23 +3,23 @@
     <vheader></vheader>
     <div class="content">
       <!-- tabs -->
-      <Tabs value="待我签">
-        <TabPane :label="item" :name="item" v-for="(item, index) in list" :key="index">
+      <Tabs :value="tabValue" @on-click='changeTabs'>
+        <TabPane :label="item.value" :name="item.key + ''" v-for="item in list" :key="item.key">
           <!-- table -->
           <Table :columns="columns" :data="data" class="table" v-if="data.length">
             <template slot-scope="{ row, index }" slot="action">
-              <Button type="primary" size="small" style="margin-right: 5px" @click="show(index)">详情</Button>
-              <Button type="error" size="small" @click="remove(index)">签署</Button>
+              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">编辑</Button>
+              <Button type="primary" size="small" style="color: #2981D9;" @click="del(row, index)">删除</Button>
             </template>
           </Table>
-
           <div class="null" v-else>
             <img src="../../assets/img/home/null.png" alt />
+            <p>暂无数据</p>
           </div>
-          <Page :total="100" show-elevator class="page" v-if="data.length" />
+          <Page :total="total" :page-size='pageSize' :current='current' @on-change='changePage' show-elevator class="page" v-if="data.length > 10" />
         </TabPane>
       </Tabs>
-      <Input search placeholder=" 请按合同标题搜索" class="searchInput" @on-search="toSearch" />
+      <Input search placeholder="请按合同标题搜索" v-model="searchValue" class="searchInput" @on-search="toSearch" />
     </div>
   </div>
 </template>
@@ -32,36 +32,28 @@ export default {
   },
   data() {
     return {
-      list: [
-        "待我签",
-        "待TA签",
-        "已完成",
-        "已过期",
-        "已撤回",
-        "已拒签",
-        "草稿",
-        "全部文件"
-      ],
-      columns: [
+      list: [],  // 合同状态列表
+      tabValue: '',   // tab切换
+      columns: [    // 表格标题
         {
           title: "合同标题",
           key: "title"
         },
         {
           title: "发起方",
-          key: "issueer"
+          key: "sponsor_name"
         },
         {
           title: "签署方",
-          key: "signer"
+          key: "signatory_name"
         },
         {
           title: "发起时间",
-          key: "date"
+          key: "create_time"
         },
         {
           title: "合同状态",
-          key: "state"
+          key: "status"
         },
         {
           title: "操作",
@@ -70,65 +62,72 @@ export default {
           align: "center"
         }
       ],
-      data: [
-        {
-          title: "保证合同-抵押担保",
-          issueer: "闫泽鹏",
-          signer: "魏慧娟",
-          date: "2020-03-04  10：00",
-          state: "已完成"
-        },
-        {
-          title: "保证合同-抵押担保",
-          issueer: "闫泽鹏",
-          signer: "魏慧娟",
-          date: "2020-03-04  10：00",
-          state: "已完成"
-        },
-        {
-          title: "保证合同-抵押担保",
-          issueer: "闫泽鹏",
-          signer: "魏慧娟",
-          date: "2020-03-04  10：00",
-          state: "已完成"
-        },
-        {
-          title: "保证合同-抵押担保",
-          issueer: "闫泽鹏",
-          signer: "魏慧娟",
-          date: "2020-03-04  10：00",
-          state: "已完成"
-        },
-        {
-          title: "保证合同-抵押担保",
-          issueer: "闫泽鹏",
-          signer: "魏慧娟",
-          date: "2020-03-04  10：00",
-          state: "已完成"
-        },
-        {
-          title: "保证合同-抵押担保",
-          issueer: "闫泽鹏",
-          signer: "魏慧娟",
-          date: "2020-03-04  10：00",
-          state: "已完成"
-        }
-      ]
+      data: [],   // 表格数据
+      total: '',  //数据总条数
+      pageSize: 10, // 每页几条
+      current: 1, // 当前页
+      searchValue: '', //搜索内容
+      status: '0', // 当前状态
     };
   },
+  created() {
+    this.showStatus()
+    this.showContract()
+  },
   methods: {
-    show(index) {
-      this.$Modal.info({
-        title: "User Info",
-        content: `Name：${this.data[index].name}<br>Age：${this.data[index].age}<br>Address：${this.data[index].address}`
-      });
+    // 获取状态列表
+    showStatus() {
+      this.$api.statusList({}).then(res=> {
+        if(res.code == 0) {
+          this.list = res.data
+          this.tabValue = res.data[0].key
+        }
+      })
     },
-    remove(index) {
-      this.data.splice(index, 1);
+    // 获取合同列表
+    showContract() {
+      this.$api.contractList({
+        title: this.searchValue,
+        status: this.status,
+        page: this.current,
+        limit: this.pageSize
+      }).then(res=> {
+        if(res.code == 0) {
+          this.data = res.data
+          this.total = res.count
+        }
+      })
     },
     // 模糊查询
-    toSearch(value) {
-      console.log(value);
+    toSearch() {
+      this.showContract()
+    },
+    // 切换tabs
+    changeTabs(name) {
+      this.status = name
+      this.searchValue = ''
+      this.current = 1
+      this.showContract()
+    },
+    // 分页
+    changePage(page) {
+      this.current = page
+      this.showContract()
+    },
+    // 跳转详情页
+    toDetails(row, index) {
+      this.$router.push({name: 'editContract', query: {con_id: row.id}})
+    },
+    // 删除
+    del(row, index) {
+      this.$api.deleteContract({
+          con_id: row.id,
+      }).then(res=>{
+          if(res.code == 0) {
+              this.$Message.success(res.msg)
+              this.showContract()
+          }
+      })
     }
   }
 };
@@ -155,7 +154,12 @@ export default {
     .null {
       width: 100%;
       text-align: center;
-      margin-top: 30px;
+      margin-top: 150px;
+      p{
+          font-size: 12px;
+          color: #d5e8e9;
+          margin-top: 20px;
+      }
     }
     .page {
       margin-top: 40px;
@@ -188,6 +192,7 @@ export default {
   .searchInput {
     .ivu-input {
       border-radius: 15px;
+      text-indent: .5em;
     }
   }
 }

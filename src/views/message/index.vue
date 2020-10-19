@@ -3,7 +3,7 @@
     <vheader></vheader>
     <div class="content">
       <div class="left">
-        <img src="../../assets/img/login/header.png" alt />
+        <img src="@/assets/img/login/header.png" alt />
       </div>
       <div class="right">
         <div class="title">基本信息</div>
@@ -12,18 +12,24 @@
             <li>登录账号</li>
             <li>登录密码</li>
             <li>用户姓名</li>
-            <li>绑定手机号</li>
           </ul>
           <ul class="r-right">
-            <li>12312312310</li>
+            <li>
+              {{phone}}
+              <span class="iconfont icon-edit-fill" @click="modalchangePhone = true"></span>
+            </li>
             <li>
               *******
               <span class="iconfont icon-edit-fill" @click="modalchangePassword = true"></span>
             </li>
-            <li>魏慧娟</li>
             <li>
-              123234564161
-              <span class="iconfont icon-edit-fill" @click="modalchangePhone = true"></span>
+              {{name}}
+              <span class='icon' v-if='isAuthentication'>
+                <img src="@/assets/img/login/authentication-c.png" alt="">已实名认证
+              </span>
+              <span style='cursor: pointer;' class='icon' v-else @click='modalAuthentication = true'>
+                <img src="@/assets/img/login/authentication.png" alt="">未实名认证
+              </span>
             </li>
           </ul>
         </div>
@@ -100,7 +106,7 @@
         <!-- 修改手机号modal2 -->
         <Modal class="modalchangePhone2" :mask-closable="false" v-model="modalchangePhone2">
           <div slot="header" class="top">
-            <img style="marginRight: 10px" src="../../assets/img/login/right.png" alt="">
+            <img style="marginRight: 10px" src="@/assets/img/login/right.png" alt="">
             <span class="text1">填写认证信息</span>
             <span class="text2">>>>>>>>>>>>>>>></span>
             <div class="circular">2</div>
@@ -123,6 +129,8 @@
           </div>
         </Modal>
 
+        <!-- 实名认证modal -->
+        <authentication :flag='this.modalAuthentication' @clFlag="sendSonData"></authentication>
       </div>
     </div>
   </div>
@@ -130,9 +138,11 @@
 
 <script>
 import vheader from "@/components/header.vue";
+import authentication from "@/components/authentication.vue";
 export default {
   components: {
-    vheader
+    vheader,
+    authentication
   },
   data() {
     return {
@@ -140,15 +150,34 @@ export default {
       modalchangePassword2: false,
       modalchangePhone: false,
       modalchangePhone2: false,
+      modalAuthentication: false,
       codePassword: "",
       codePhone: '',
       password: '',
       passwordNew: '',
       newPhone: '',
       newCode: '',
+      isAuthentication: false,
+      phone: '',
+      name: ''
     };
   },
+  created() {
+    this.show()
+  },
   methods: {
+    // 展示个人信息
+    show() {
+        this.$api.info({
+
+        }).then(res=>{
+          if(res.code == 0) {
+            console.log(res)
+            this.phone = res.data.phone
+            this.name = res.data.name ? res.data.name : '游客'
+          }
+        })
+    },
     okChange() {
       if (this.codePassword) {
         this.modalchangePassword = false;
@@ -188,6 +217,11 @@ export default {
       } else {
         this.$Message.error('内容不能为空!')
       }
+    },
+
+    // 关闭去认证弹框
+    sendSonData() {
+      this.modalAuthentication = false
     }
   }
 };
@@ -203,7 +237,7 @@ export default {
     margin: 0 auto;
     margin-top: 110px;
     border: 1px solid #bfbfbf;
-    padding: 40px 70px;
+    padding: 40px 54px;
     display: flex;
     .left {
       width: 50%;
@@ -244,6 +278,15 @@ export default {
               margin-left: 12px;
               color: #bfbcbf;
               cursor: pointer;
+            }
+            .icon{
+              font-size: 12px;
+              color: #777777;
+              margin-left: 10px;
+              img{
+                vertical-align: middle;
+                margin-right: 8px;
+              }
             }
           }
         }
@@ -373,6 +416,5 @@ export default {
       }
     }
   }
-  
 }
 </style>

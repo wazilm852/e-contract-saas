@@ -65,7 +65,7 @@
         <h4>
           <img src="../../assets/img/contract/signer.png" alt />文件状态
         </h4>
-        <p style="color:#127FD2;">待他签</p>
+        <p style="color:#2D8CF0;">待他签</p>
         <h3>待签署方</h3>
         <h4>
           <img src="../../assets/img/contract/launch.png" alt />发起方
@@ -249,13 +249,13 @@ export default {
   .content {
     margin-top: 60px;
     width: 100%;
+    height: calc(~ "100vh - 140px");
     display: flex;
     justify-content: space-between;
     .left {
       width: 320px;
       min-width: 320px;
       background-color: #fff;
-      height: calc(100vh - 140px);
       padding: 50px 40px;
       overflow: auto;
       overflow-x: hidden;
@@ -312,7 +312,6 @@ export default {
     .center {
       min-width: 770px;
       background-color: #eaeaea;
-      height: calc(100vh - 140px);
       overflow: auto;
       padding-top: 10px;
       .contract {
@@ -399,7 +398,6 @@ export default {
       width: 280px;
       min-width: 280px;
       background-color: #fff;
-      height: calc(100vh - 140px);
       padding: 50px 20px;
       overflow: auto;
       h3 {

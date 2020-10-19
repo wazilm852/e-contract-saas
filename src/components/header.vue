@@ -29,7 +29,6 @@
 </template>
 
 <script>
-
 export default {
     data() {
         return {
@@ -61,12 +60,12 @@ export default {
                     urlc: require('../assets/img/home/pic4-c.png'),
                     name: 'signAdmin'
                 },
-                // {
-                //     text: '退出',
-                //     url: require('../assets/img/home/head.png'),
-                //     urlc: require('../assets/img/home/head.png'),
-                //     name: ''
-                // },
+                {
+                    text: '我的模板',
+                    url: require('../assets/img/home/pic5.png'),
+                    urlc: require('../assets/img/home/pic5-c.png'),
+                    name: 'myTemplate'
+                },
             ],
             nowIndex: 0,
         }
@@ -96,6 +95,9 @@ export default {
             case 'signAdmin':
                 this.sign = 3
                 break;
+            case 'myTemplate':
+                this.sign = 4
+                break;
         }
     },
     methods: {
@@ -113,6 +115,7 @@ export default {
         },
         downClick(name) {
             if(name == '退出') {
+                this.$vc.set('userInfo', '')
                 this.$router.push({name: 'login'})
             } else {
                 this.$router.push({name: 'message'})

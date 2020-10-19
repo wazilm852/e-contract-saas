@@ -19,7 +19,8 @@
                         </FormItem>
                         <FormItem prop="code">
                             <Input v-model="formInline.code" class="styleInput" maxlength="4" prefix="md-key" placeholder="请输入验证码" @on-enter="handleSubmit('formInline')" />
-                            <span class="get-code"><span>获取验证码</span></span>
+                            <span class="get-code" v-show='ifGet == true' @click='getCode'>获取验证码</span>
+                            <span class="get-code-c" v-show='ifGet == false'>{{codCount}}</span>
                         </FormItem>
                         <Checkbox v-model="flag" class="flag">已经阅读并同意<span>《使用协议》</span>及<span>《隐私条款》</span> </Checkbox>
                         <FormItem class="submit">
@@ -46,6 +47,8 @@ export default {
         };
         return {
             flag: false,
+            ifGet: true,
+            codCount: 60,
             formInline: {
                 user: '',
                 password: '',
@@ -70,12 +73,50 @@ export default {
         handleSubmit(name) {
             this.$refs[name].validate((valid) => {
                 if (valid) {
-                    this.$router.push({name: 'certification'})
-                } else {
-                    this.$Message.error('密码错误!');
+                    if(this.flag) {
+                        this.$api.regist({
+                            phone: this.formInline.user,
+                            password: this.formInline.password,
+                            code: this.formInline.code
+                        }).then(res=>{
+                            if(res.code == 0) {
+                                this.$Message.success(res.msg);
+                                this.$router.push({name: 'login'})
+                                // this.$router.push({name: 'certification'})
+                            } else {
+                                this.$Message.error(res.msg);
+                            }
+                        })
+                    } else {
+                        this.$Message.warning('请先同意服务条款')
+                    }
                 }
             })
         },
+        getCode() {
+            if(!PHONE.test(this.formInline.user)) {
+                this.$Message.error('请输入正确的手机号!');
+            } else {
+                this.$api.getCode({
+                    phone: this.formInline.user
+                }).then(res=>{
+                    if(res.code == 0) {
+                        this.$Message.success(res.msg);
+                        this.ifGet = false
+                        var t = setInterval(()=> {
+                            this.codCount -- 
+                            if(this.codCount <= 0) {
+                                this.codCount = 60
+                                clearInterval(t)
+                                this.ifGet = true
+                            }
+                        }, 1000)
+                    } else {
+                        this.$Message.error(res.msg);
+                    }
+                })
+            }
+        }
     }
 }
 </script>
@@ -136,6 +177,16 @@ export default {
                             top: 0px;
                             cursor: pointer;
                             color:#135BB6;
+                            span{
+                                padding-left: 10px;
+                                border-left:1px solid #AAAAAA;
+                            }
+                        }
+                        .get-code-c{
+                            position: absolute;
+                            right:10px;
+                            top: 0px;
+                            color: #999;
                             span{
                                 padding-left: 10px;
                                 border-left:1px solid #AAAAAA;

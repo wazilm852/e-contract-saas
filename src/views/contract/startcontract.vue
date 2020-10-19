@@ -2,7 +2,7 @@
   <div class="startcontract">
     <vheader></vheader>
     <div class="content">
-      <div class="upload">
+      <!-- <div class="upload">
         <div class="title">
           <img src="../../assets/img/contract/1.png" alt />
           上传合同
@@ -20,10 +20,10 @@
             <Button class="btn">重新上传</Button>
           </div>
         </div>
-      </div>
+      </div> -->
       <div class="contractMessage">
         <div class="title">
-          <img src="../../assets/img/contract/2.png" alt />
+          <!-- <img src="../../assets/img/contract/2.png" alt /> -->
           填写合同信息
         </div>
         <div class="box">
@@ -44,7 +44,7 @@
       </div>
       <div class="signer">
         <div class="title">
-          <img src="../../assets/img/contract/3.png" alt />
+          <!-- <img src="../../assets/img/contract/3.png" alt /> -->
           填写签署方信息
         </div>
         <div class="table">
@@ -101,6 +101,8 @@
             <Button type="primary" @click="okAdd">确认</Button>
           </div>
         </Modal>
+        <!-- 实名认证modal -->
+        <authentication :flag='this.modalAuthentication' @clFlag="sendSonData"></authentication>
       </div>
       <div class="next">
         <Button class="btn" @click="next">下一步</Button>
@@ -111,15 +113,17 @@
 
 <script>
 import vheader from "@/components/header.vue";
-import PDFJS from 'pdfjs-dist'
+import authentication from "@/components/authentication.vue";
 export default {
   components: {
-    vheader
+    vheader,
+    authentication
   },
   data() {
     return {
       contractName: "保证合同-抵押担保",
       modalMailList: false,
+      modalAuthentication: false,
       options3: {
         disabledDate(date) {
           return date && date.valueOf() < Date.now() - 86400000;
@@ -196,7 +200,7 @@ export default {
     };
   },
   created() {
-      console.log(PDFJS)
+
   },
   methods: {
     add() {
@@ -214,11 +218,17 @@ export default {
       this.list.splice(index, 1);
     },
     next() {
-      this.$router.push({name: 'signContract'})
+      this.modalAuthentication = true
+      // this.$router.push({name: 'signContract'})
     },
     okAdd() {},
     handleSelectAll(status) {
       this.$refs.selection.selectAll(status);
+    },
+
+    // 关闭去认证弹框
+    sendSonData() {
+      this.modalAuthentication = false
     }
   }
 };
@@ -290,6 +300,7 @@ export default {
       box-shadow: 0px 0px 21px 0px rgba(14, 57, 111, 0.2);
       padding: 30px;
       margin-bottom: 30px;
+      margin-top: 30px;
       .title {
         font-size: 18px;
         font-weight: bold;

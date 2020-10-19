@@ -100,8 +100,9 @@ export default {
         border: 1px solid #0E396F;
         border-radius:4px;
         margin: 0 auto;
-        margin-top: 140px;
+        margin-top: 100px;
         padding: 84px 75px 65px;
+        margin-bottom: 100px;
         h2{
             text-align: center;
             font-size: 22px;
@@ -117,7 +118,7 @@ export default {
                     right:10px;
                     top: 35px;
                     cursor: pointer;
-                    color:#135BB6;
+                    color:#2981d9;
                     span{
                         padding-left: 10px;
                         border-left:1px solid #AAAAAA;

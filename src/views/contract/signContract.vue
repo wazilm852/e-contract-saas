@@ -455,7 +455,7 @@ export default {
     padding-left: 40px;
     background-color: #fff;
     box-shadow: 0px 3px 16px 0px rgba(14, 57, 111, 0.17);
-    z-index: 999;
+    // z-index: 999;
     h2 {
       font-size: 16px;
       color: #333333;
@@ -469,11 +469,13 @@ export default {
     width: 100%;
     display: flex;
     justify-content: space-between;
+    height: calc(~ "100vh - 140px");
+    // height: calc(100vh - 140px);
     .left {
       width: 320px;
       min-width: 320px;
       background-color: #fff;
-      height: calc(100vh - 140px);
+      // height: calc(100vh - 140px);
       padding: 50px 40px;
       overflow: auto;
       overflow-x: hidden;
@@ -504,9 +506,9 @@ export default {
         }
       }
       .click {
-        border: 1px solid #127fd2;
+        border: 1px solid #2c8cee;
         .triangle {
-          border-color: #127fd2 transparent transparent transparent;
+          border-color: #2c8cee transparent transparent transparent;
         }
       }
     }
@@ -530,7 +532,7 @@ export default {
     .center {
       min-width: 770px;
       background-color: #eaeaea;
-      height: calc(100vh - 140px);
+      // height: calc(100vh - 140px);
       overflow: auto;
       padding-top: 10px;
       .contract {
@@ -617,7 +619,7 @@ export default {
       width: 280px;
       min-width: 280px;
       background-color: #fff;
-      height: calc(100vh - 140px);
+      // height: calc(100vh - 140px);
       padding: 50px 20px;
       overflow: auto;
       h3 {
@@ -778,7 +780,7 @@ export default {
             display: flex;
             justify-content: center;
             font-size: 22px;
-            color:#0E396F;
+            color:#333333;
           }
         }
         .ivu-modal-body {
@@ -846,7 +848,7 @@ export default {
             display: flex;
             justify-content: center;
             font-size: 22px;
-            color:#0E396F;
+            color:#333333;
           }
         }
         .ivu-modal-body {

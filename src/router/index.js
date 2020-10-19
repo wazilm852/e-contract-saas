@@ -1,5 +1,6 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
+import vc from 'vue-cookie'
 
 Vue.use(VueRouter)
 
@@ -64,10 +65,38 @@ const routes = [
     name: 'signDetails',
     component: () => import('../views/contract/signDetails.vue')
   },
+  {
+    path: '/editContract',
+    name: 'editContract',
+    component: () => import('../views/contract/editContract.vue')
+  },
+  {
+    path: '/myTemplate',
+    name: 'myTemplate',
+    component: () => import('../views/myTemplate/index.vue')
+  },
+  {
+    path: '/lookTemplate',
+    name: 'lookTemplate',
+    component: () => import('../views/myTemplate/lookTemplate.vue')
+  },
 ]
 
 const router = new VueRouter({
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  if (to.path === '/') {
+    next();
+  } else {
+    let userInfo = vc.get('userInfo')
+    if (userInfo === null || userInfo === '') {
+      next('/');
+    } else {
+      next();
+    }
+  }
+});
 
 export default router

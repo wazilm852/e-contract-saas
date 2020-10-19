@@ -54,7 +54,7 @@
         </div>
       </div>
     </div>
-    <vfooter class="footer"></vfooter>
+    <!-- <vfooter class="footer"></vfooter> -->
   </div>
 </template>
 
@@ -113,7 +113,10 @@ export default {
     clear() {
       this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     },
-    okAdd() {},
+    okAdd() {
+      var base64Img = this.canvas.toDataURL('image/jpg');
+      console.log(base64Img);
+    },
     close() {
       this.modalSign = false;
       this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
@@ -130,16 +133,16 @@ export default {
 <style lang="less" scoped>
 .signAdmin {
   width: 100%;
-  height: 100vh;
-  display: grid;
-  grid-template-rows: 1fr auto;
+  // height: 100vh;
+  // display: grid;
+  // grid-template-rows: 1fr auto;
   .footer {
     grid-row-start: 3;
     grid-row-end: 3;
   }
   .content {
     width: 1200px;
-    height: 79.8vh;
+    // height: 79.8vh;
     margin: 0 auto;
     padding-top: 30px;
     .title {
@@ -176,7 +179,7 @@ export default {
           display: flex;
           align-items: center;
           font-size: 14px;
-          color: #4680ff;
+          color: #2981d9;
           img {
             margin-right: 10px;
           }
@@ -185,7 +188,7 @@ export default {
           width: 56px;
           height: 90px;
           font-size: 14px;
-          color: #4680ff;
+          color: #2981d9;
           text-align: center;
           img {
             margin-bottom: 20px;
@@ -227,7 +230,7 @@ export default {
           h2 {
             font-size: 24px;
             text-align: center;
-            color: #0e396f;
+            color: #333333;
             font-weight: bold;
           }
         }

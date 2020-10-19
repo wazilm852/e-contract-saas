@@ -6,20 +6,20 @@
         <div class="left">我的签署人</div>
         <div class="right">
           <div class="btn" @click="modalAddContacts = true">添加签署人</div>
-          <Input search placeholder=" 请输入账号/姓名" class="searchInput" @on-search="search" />
+          <Input search placeholder=" 请输入账号/姓名" v-model='searchValue' class="searchInput" @on-search="search" />
         </div>
       </div>
       <!-- table -->
       <Table :columns="columns" :data="data" class="table" v-if="data.length">
         <template slot-scope="{ row, index }" slot="action">
-          <Button type="primary" size="small" style="margin-right: 5px" @click="show(index)">编辑</Button>
-          <Button type="error" size="small" @click="remove(index)">删除</Button>
+          <Button type="primary" size="small" style="margin-right: 5px; color: #2981D9;" @click="save(row, index)">编辑</Button>
+          <Button type="error" size="small" style="color: #2981D9;" @click="remove(row, index)">删除</Button>
         </template>
       </Table>
       <div class="null" v-else>
         暂无任何记录
       </div>
-      <Page :total="100" show-elevator class="page" v-if="data.length" />
+      <Page :total="total" :page-size='pageSize' :current='current' show-elevator class="page" @on-change='changePage' v-if="data.length > 10" />
       <!-- 添加签署人modal -->
       <Modal class="modalAddContacts" :mask-closable="false" v-model="modalAddContacts">
         <p slot="header">添加签署人</p>
@@ -56,9 +56,6 @@
         >
           <FormItem prop="name" label="姓名">
             <Input type="text" v-model="formInlineC.name" placeholder="请输入姓名" />
-          </FormItem>
-          <FormItem prop="phone" label="账号">
-            <Input type="text" maxlength="11" v-model="formInlineC.phone" placeholder="请输入账号" />
           </FormItem>
           <FormItem class="okBtn">
             <Button @click="cancelC('formInlineC')">取消</Button>
@@ -98,6 +95,10 @@ export default {
       }
     };
     return {
+      pageSize: 10, // 每页几条
+      current: 1, // 当前页
+      total: 0, // 总条数
+      searchValue: '', //模糊查询
       modalAddContacts: false,
       modalChangeContacts: false,
       modalDelContacts: false,
@@ -111,17 +112,16 @@ export default {
           key: "phone"
         },
         {
+          title: "认证状态",
+          key: "is_verified"
+        },
+        {
           title: "操作",
           slot: "action",
           align: "center"
         }
       ],
-      data: [
-        {
-          name: "闫泽鹏",
-          phone: "13262107141"
-        }
-      ],
+      data: [],
       formInline: {
         name: "",
         phone: ""
@@ -132,64 +132,112 @@ export default {
       },
       formInlineC: {
         name: "",
-        phone: ""
       },
       ruleInlineC: {
         name: [{ required: true, message: "姓名不能为空", trigger: "blur" }],
-        phone: [{ required: true, validator: validatePhone, trigger: "blur" }]
-      }
+      },
+      saveId : '', //被编辑人id 
+      delId : '', //被删除人id 
     };
   },
+  created() {
+    this.show()
+  },
   methods: {
-    show(index) {
-      this.modalChangeContacts = true;
-    },
-    remove(index) {
-      this.modalDelContacts = true;
+    // 展示通讯录列表
+    show() {
+      this.$api.bookList({
+        search: this.searchValue,
+        page: this.current,
+        limit: this.pageSize
+      }).then(res=>{
+        if(res.code == 0) {
+          this.data = res.data
+          this.data.forEach((item, index)=> {
+              item.is_verified = item.is_verified == 0 ? '未认证' : item.is_verified == 1 ? '已认证' : ''
+          })
+          this.total = res.count
+        }
+      })
     },
     // 模糊查询 、
     search() {
-      console.log("查询联系人");
+      this.current = 1
+      this.show()
+    },
+    // 分页
+    changePage(page) {
+      this.current = page
+      this.show()
     },
     // modal添加联系人
     handleSubmit(name) {
       this.$refs[name].validate(valid => {
         if (valid) {
-          this.$Message.success("添加成功!");
-          this.modalAddContacts = false;
-          this.$refs[name].resetFields();
-        } else {
-          this.$Message.error("添加失败!");
-          this.$refs[name].resetFields();
+          this.$api.addBook({
+            name: this.formInline.name,
+            phone: this.formInline.phone
+          }).then(res=>{
+            if(res.code == 0) {
+              this.$Message.success("添加成功!");
+              this.modalAddContacts = false;
+              this.$refs[name].resetFields();
+              this.show()
+            }
+          })
         }
       });
     },
-    cancel(name) {
-      this.modalAddContacts = false;
-      this.$refs[name].resetFields();
+    // 打开编辑联系人modal
+    save(row, index) {
+      this.saveId = row.id
+      this.modalChangeContacts = true;
     },
     // modal编辑联系人
     handleSubmitC(name) {
       this.$refs[name].validate(valid => {
         if (valid) {
-          this.$Message.success("修改成功!");
-          this.modalChangeContacts = false;
-          this.$refs[name].resetFields();
-        } else {
-          this.$Message.error("修改失败!");
-          this.$refs[name].resetFields();
+          this.$api.saveBook({
+            name: this.formInlineC.name,
+            id: this.saveId
+          }).then(res=>{
+            if(res.code == 0) {
+              this.$Message.success(res.data)
+              this.modalChangeContacts = false;
+              this.$refs[name].resetFields();
+              this.show()
+            }
+          })
         }
       });
     },
+    // 删除联系人modal
+    remove(row, index) {
+      this.delId = row.id
+      this.modalDelContacts = true;
+    },
+    // 删除联系人
+    okDel() {
+      this.$api.deleteBook({
+        id: this.delId
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.data)
+          this.modalDelContacts = false;
+          this.show()
+        }
+      })
+    },
+    // 取消
+    cancel(name) {
+      this.modalAddContacts = false;
+      this.$refs[name].resetFields();
+    },
+    // 取消
     cancelC(name) {
       this.modalChangeContacts = false;
       this.$refs[name].resetFields();
     },
-    // 删除联系人
-    okDel() {
-      // this.data.splice(index, 1);
-      this.modalDelContacts = false;
-    }
   }
 };
 </script>
@@ -223,17 +271,17 @@ export default {
           width: 100px;
           height: 30px;
           text-align: center;
-          border: 1px solid #6f8eff;
+          border: 1px solid #2d8cf0;
           border-radius: 15px;
           line-height: 30px;
           font-size: 12px;
-          color: #6f8eff;
+          color: #2d8cf0;
           margin-right: 20px;
           cursor: pointer;
           transition: 0.2s all;
         }
         .btn:hover {
-          background-color: #6f8eff;
+          background-color: #2d8cf0;
           color: #fff;
         }
         .searchInput {
@@ -353,19 +401,11 @@ export default {
         color: #333333;
         text-align: center;
         font-weight: 400;
+        border: 0;
       }
       .ivu-modal-footer {
         margin-top: 26px;
-        .okBtn{
-          display: flex;
-          justify-content: space-between;
-          padding: 0 100px;
-          .ivu-btn {
-            width: 100px;
-            height: 40px;
-            border-radius: 4px;
-          }
-        }
+        border: 0;
       }
     }
   }

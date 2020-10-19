@@ -96,9 +96,7 @@ module.exports = {
   devServer: {
     proxy: {
       '/api': {
-        // target: 'http://demaji.vaneqi.com',  //目标接口域名,正式
-        target: 'https://www.weizhu.xin/',  //目标接口域名,测试
-        // target: 'http://192.168.8.119:6666',  //目标接口域名,徐靖
+        target: 'http://contract/',  //目标接口域名
         changeOrigin: true,  //是否跨域
         ws: true,
         pathRewrite: {
