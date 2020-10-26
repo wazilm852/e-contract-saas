@@ -2,7 +2,7 @@
   <div class="home">
     <vheader></vheader>
     <div class="content">
-      <div class="toAuthentication">
+      <div class="toAuthentication" v-if='!isVerified'>
         为保障电子签名的法律效力，请立即进行<span @click='modalAuthentication = true'>实名认证</span>。
       </div>
       <ul class="state">
@@ -138,9 +138,12 @@ export default {
       token: {
           token: JSON.parse(this.$vc.get('userInfo')).token
       },
+      isVerified: ''
     };
   },
   created() {
+    var userInfo = JSON.parse(this.$vc.get('userInfo'))
+    this.isVerified = userInfo.is_verified
     this.showTable();
   },
   methods: {

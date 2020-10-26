@@ -4,11 +4,16 @@
     <div class="content">
       <div class="title">我的签章</div>
       <ul class="signs">
-        <li>
-          <img class="pic" src="../../assets/img/sign/sign.png" alt />
-          <div class="default">
-            <img src="../../assets/img/sign/start.png" alt />
-            默认签章
+        <li v-for='(item, index) in list' :key='index'>
+          <Icon type="ios-close" class='icon' @click='del(item.id)' />
+          <img class="pic" :src='item.oss' alt />
+          <div class="default" v-if="item.is_default">
+            <img src="../../assets/img/sign/start-c.png" alt />
+            <span style='color: #2981d9;'>默认签章</span>
+          </div>
+          <div class="default" v-else>
+            <img @click='setDefault(item.id)' src="../../assets/img/sign/start.png" alt />
+            <span>默认签章</span>
           </div>
         </li>
         <li class="add-box" @click="modalSign = true">
@@ -54,7 +59,6 @@
         </div>
       </div>
     </div>
-    <!-- <vfooter class="footer"></vfooter> -->
   </div>
 </template>
 
@@ -70,13 +74,50 @@ export default {
     return {
       modalSign: false,
       canvasMoveUse: false,
-      defortColor: "#000000"
+      defortColor: "#000000",
+      list: []
     };
+  },
+  created() {
+    this.signList()
   },
   mounted() {
     this.show();
   },
   methods: {
+    // 展示签章列表
+    signList() {
+      this.$api.signList({
+        
+      }).then(res=>{
+        if(res.code == 0) {
+          console.log(res)
+          this.list = res.data
+        }
+      })
+    },
+    // 设置默认签章
+    setDefault(id) {
+      this.$api.setDefault({
+        id: id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.signList()
+        }
+      })
+    },
+    // 删除签章
+    del(id) {
+      this.$api.deleteSign({
+        id: id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.signList()
+        }
+      })
+    },
     show() {
       this.canvas = this.$refs.canvas; //指定canvas
       this.ctx = this.canvas.getContext("2d"); //设置2D渲染区域
@@ -115,7 +156,17 @@ export default {
     },
     okAdd() {
       var base64Img = this.canvas.toDataURL('image/jpg');
-      console.log(base64Img);
+      this.$api.addSign({
+        img: base64Img
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.modalSign = false
+          this.signList()
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
     },
     close() {
       this.modalSign = false;
@@ -154,17 +205,18 @@ export default {
     .signs {
       width: 1200px;
       display: flex;
-      // justify-content: space-between;
+      flex-wrap: wrap;
       li {
         width: 280px;
         height: 280px;
         border-radius: 4px;
         box-shadow: 0px 0px 21px 0px rgba(14, 57, 111, 0.2);
-        margin-right: 26px;
+        margin-right: 20px;
         position: relative;
         display: flex;
         justify-content: center;
         align-items: center;
+        margin-bottom: 20px;
         .pic {
           width: 160px;
         }
@@ -179,9 +231,11 @@ export default {
           display: flex;
           align-items: center;
           font-size: 14px;
-          color: #2981d9;
+          // color: #2981d9;
+          color: #AAAAAA;
           img {
             margin-right: 10px;
+            cursor: pointer;
           }
         }
         .add {
@@ -194,6 +248,17 @@ export default {
             margin-bottom: 20px;
           }
         }
+        .icon{
+          position: absolute;
+          top: 4px;
+          right: 4px;
+          font-size: 30px;
+          cursor: pointer;
+          display: none;
+        }
+      }
+      li:hover .icon{
+        display: block;
       }
       .add-box {
         cursor: pointer;

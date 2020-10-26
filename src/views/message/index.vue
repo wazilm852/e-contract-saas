@@ -24,7 +24,7 @@
             </li>
             <li>
               {{name}}
-              <span class='icon' v-if='isAuthentication'>
+              <span class='icon' v-if='isVerified'>
                 <img src="@/assets/img/login/authentication-c.png" alt="">已实名认证
               </span>
               <span style='cursor: pointer;' class='icon' v-else @click='modalAuthentication = true'>
@@ -157,13 +157,15 @@ export default {
       passwordNew: '',
       newPhone: '',
       newCode: '',
-      isAuthentication: false,
+      isVerified: false,
       phone: '',
-      name: ''
+      name: '',
     };
   },
   created() {
     this.show()
+    var userInfo = JSON.parse(this.$vc.get('userInfo'))
+    this.isVerified = userInfo.is_verified
   },
   methods: {
     // 展示个人信息
@@ -172,7 +174,6 @@ export default {
 
         }).then(res=>{
           if(res.code == 0) {
-            console.log(res)
             this.phone = res.data.phone
             this.name = res.data.name ? res.data.name : '游客'
           }

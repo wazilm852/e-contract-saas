@@ -23,7 +23,6 @@
       </div> -->
       <div class="contractMessage">
         <div class="title">
-          <!-- <img src="../../assets/img/contract/2.png" alt /> -->
           填写合同信息
         </div>
         <div class="box">
@@ -44,7 +43,6 @@
       </div>
       <div class="signer">
         <div class="title">
-          <!-- <img src="../../assets/img/contract/3.png" alt /> -->
           填写签署方信息
         </div>
         <div class="table">
@@ -60,30 +58,44 @@
           </div>
           <div class="phone">
             <Input type="text" disabled v-model="initiator.phone" />
-            <img src="../../assets/img/contract/certified.png" alt />
-            <span>已实名</span>
+            <span v-if='isVerified'>
+              <img src="../../assets/img/contract/certified.png" alt />
+              <span>已认证</span>
+            </span>
+            <span v-else>
+              <img src="../../assets/img/contract/uncertified.png" alt />
+              <span>未认证</span>
+            </span>
           </div>
         </div>
         <div
           class="signatory"
           v-for="(item, index) in list"
           :key="index"
-          @mouseenter="item.flag = true"
-          @mouseleave="item.flag = false"
         >
           <div class="signer-name">签署人</div>
           <div class="name">
-            <Input type="text" v-model="item.name" placeholder="请输入姓名" />
+            <Input type="text" v-model="item.name" @on-blur='nameBlue(item.name)' placeholder="请输入姓名" />
+            <p v-if='nameFlag && indexFlag == index'>请输入姓名</p>
           </div>
           <div class="phone">
-            <Input type="text" v-model="item.phone" placeholder="请输入手机号" />
-            <img src="../../assets/img/contract/uncertified.png" alt />
-            <span>未实名</span>
+            <Input type="text" v-model="item.phone" @on-blur='phoneBlue(item.phone, index)' placeholder="请输入手机号" />
+            <p v-if='phoneFlag && indexFlag == index'>请输入正确格式的手机号</p>
+            <span v-if="item.is_verified == 1 || item.is_verified == '已认证'">
+              <img src="../../assets/img/contract/certified.png" alt />
+              <span>已认证</span>
+            </span>
+            <span v-else>
+              <img src="../../assets/img/contract/uncertified.png" alt />
+              <span>未认证</span>
+            </span>
           </div>
-          <div class="ope" @click="del(index)" v-if="item.flag">删除</div>
+          <div class="ope">
+            <span @click="del(index)">删除</span>
+          </div>
         </div>
         <div class="btn">
-          <div class="add" @click="add">
+          <div class="add" @click="addSigner">
             <img src="../../assets/img/contract/add.png" alt />添加签署方
           </div>
           <div class="add" @click="modalMailList = true">
@@ -93,9 +105,9 @@
         <!-- 通讯录 -->
         <Modal class="modalMailList" :mask-closable="false" v-model="modalMailList">
           <p slot="header">从通讯录添加</p>
-          <Table ref="selection" :columns="columns" :data="data" class="table" v-if="data.length"></Table>
+          <Table ref="selection" :columns="columns" @on-selection-change='selectionChange' :data="data" class="table" v-if="data.length"></Table>
           <div class="null" v-else>暂无任何记录</div>
-          <Page :current="2" :total="50" simple class="page" v-if="data.length" />
+          <Page :current="current" :page-size='pageSize' :total="total" simple class="page" @on-change='changePage' v-if="data.length > 10" />
           <div slot="footer" class="okBtn">
             <Button @click="modalMailList = false">取消</Button>
             <Button type="primary" @click="okAdd">确认</Button>
@@ -114,6 +126,7 @@
 <script>
 import vheader from "@/components/header.vue";
 import authentication from "@/components/authentication.vue";
+import { PHONE } from "@/common/regex.js"
 export default {
   components: {
     vheader,
@@ -121,7 +134,11 @@ export default {
   },
   data() {
     return {
-      contractName: "保证合同-抵押担保",
+      current: 1,
+      pageSize: 10,
+      total: 0,
+      isVerified: 0,  //是否实名认证 
+      contractName: this.$route.query.title,
       modalMailList: false,
       modalAuthentication: false,
       options3: {
@@ -129,17 +146,8 @@ export default {
           return date && date.valueOf() < Date.now() - 86400000;
         }
       },
-      initiator: {
-        name: "闫泽鹏",
-        phone: "13262107141"
-      },
-      list: [
-        {
-          name: "",
-          phone: "",
-          flag: false //删除按钮
-        }
-      ],
+      initiator: {},
+      list: [],
       columns: [
         {
           type: "selection",
@@ -147,88 +155,132 @@ export default {
           align: "center"
         },
         {
-          title: "账号",
-          key: "user"
-        },
-        {
           title: "姓名",
           key: "name"
+        },
+        {
+          title: "账号",
+          key: "phone"
+        },
+        {
+          title: '认证状态',
+          key: "is_verified"
         }
       ],
-      data: [
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        },
-        {
-          user: "13262107141",
-          name: "奥巴马"
-        }
-      ]
+      data: [],
+      nameFlag: false,
+      phoneFlag: false,
+      selectionBook: [], //通讯录选中的签署人
+      indexFlag: 0
     };
   },
   created() {
-
+    var userInfo = JSON.parse(this.$vc.get('userInfo'))
+    this.initiator.name = userInfo.name ? userInfo.name : '游客'
+    this.initiator.phone = userInfo.phone
+    this.isVerified = userInfo.is_verified
+    this.showBook()
   },
   methods: {
-    add() {
-      if (this.list.length < 10) {
+    // 通讯录
+    showBook() {
+      this.$api.bookList({
+        search: '',
+        page: this.current,
+        limit: this.pageSize
+      }).then(res=>{
+        if(res.code == 0) {
+          this.data = res.data
+          this.total = res.count
+          this.data.forEach(item => {
+            item.is_verified = item.is_verified == 0 ? '未认证' : item.is_verified == 1 ? '已认证' : ''
+          });
+        }
+      })
+    },
+    // 分页
+    changePage(page) {
+      this.current = page
+      this.showBook()
+    },
+    // 选择联系人
+    selectionChange(value) {
+      this.selectionBook = value
+    },
+    // 通讯录ok按钮
+    okAdd() {
+      this.selectionBook.forEach((item, index) => {
+        this.list.push(item)
+      })
+      this.modalMailList = false
+    },
+    // 添加签署人
+    addSigner() {
+      if(this.list == 0) {
         this.list.push({
           name: "",
           phone: "",
-          flag: false
+          is_verified: 0
         });
-      } else {
-        this.$Message.error("最多添加10个签署人");
+      } else if(this.list[this.list.length - 1].name && PHONE.test(this.list[this.list.length - 1].phone)) {
+        if (this.list.length < 10) {
+          this.list.push({
+            name: "",
+            phone: "",
+            is_verified: 0
+          });
+        } else {
+          this.$Message.error("最多添加10个签署人");
+        }
+      } else if(!this.list[this.list.length - 1].name && !PHONE.test(this.list[this.list.length - 1].phone)) {
+        this.nameFlag = true
+        this.phoneFlag = true
+      } else if(!this.list[this.list.length - 1].name) {
+        this.nameFlag = true
+      } else if(!PHONE.test(this.list[this.list.length - 1].phone)) {
+        this.phoneFlag = true
       }
+      
     },
+    // 删除签署人
     del(index) {
       this.list.splice(index, 1);
     },
+    // 下一步
     next() {
-      this.modalAuthentication = true
-      // this.$router.push({name: 'signContract'})
+      if(this.isVerified) {
+        this.$router.push({name: 'signContract'})
+      } else {
+        this.modalAuthentication = true
+      }
     },
-    okAdd() {},
-    handleSelectAll(status) {
-      this.$refs.selection.selectAll(status);
-    },
-
     // 关闭去认证弹框
     sendSonData() {
       this.modalAuthentication = false
+    },
+    // 姓名离焦
+    nameBlue(name) {
+      if(name) {
+        this.nameFlag = false
+      } else {
+        this.nameFlag = true
+      }
+    },
+    // 手机号离焦
+    phoneBlue(phone, index) {
+      this.indexFlag = index
+      if(PHONE.test(phone)) {
+        this.phoneFlag = false
+        this.$api.searchBook({
+          phone: phone
+        }).then(res=>{
+          if(res.code == 0) {
+            this.list[index].is_verified = res.data.is_verified
+          }
+        })
+      } else {
+        this.phoneFlag = true
+      }
     }
   }
 };
@@ -373,23 +425,48 @@ export default {
         }
         .name {
           width: 218px;
+          position: relative;
+          p{
+            position: absolute;
+            top: 28px;
+            left: 0;
+            color: #ed4014;
+            font-size: 12px;
+          }
         }
         .phone {
           width: 273px;
           display: flex;
           align-items: center;
+          position: relative;
           img {
             margin: 0 8px;
           }
           span {
             font-size: 14px;
             color: #333333;
+            display: flex;
+            align-items: center;
+          }
+          p{
+            position: absolute;
+            top: 28px;
+            left: 0;
+            color: #ed4014;
+            font-size: 12px;
           }
         }
         .ope {
           width: 500px;
           text-align: center;
+          display: none;
+          span:hover{
+            color:#127fd2;
+          }
         }
+      }
+      .signatory:hover .ope{
+        display: block;
       }
       .initiator,
       .signatory {

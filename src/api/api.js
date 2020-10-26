@@ -30,6 +30,7 @@ export default {
   getCode (params) {
     return POST(`${baseUrl}/base/getSmsCode`, params)
   },
+
   // 系统模板
   systemTemp (params) {
     return POST(`${baseUrl}/api/template/system`, params)
@@ -58,6 +59,11 @@ export default {
   uploadTemp (params) {
     return POST(`${baseUrl}/api/template/upload`, params)
   },
+  // 保存模板
+  saveTemp (params) {
+    return POST(`${baseUrl}/api/template/save`, params)
+  },
+
   // 合同状态列表
   statusList (params) {
     return Get(`${baseUrl}/api/contract/statusList`, params)
@@ -78,10 +84,12 @@ export default {
   deleteContract (params) {
     return POST(`${baseUrl}/api/contract/delete`, params)
   },
+
   // 基本信息
   info (params) {
     return POST(`${baseUrl}/api/user/info`, params)
   },
+
   // 通讯录列表
   bookList (params) {
     return POST(`${baseUrl}/api/book/list`, params)
@@ -97,5 +105,26 @@ export default {
   // 删除签署人
   deleteBook (params) {
     return POST(`${baseUrl}/api/book/delete`, params)
+  },
+  // 搜索手机号是否实名
+  searchBook (params) {
+    return POST(`${baseUrl}/api/book/search`, params)
+  },
+
+  // 签章列表
+  signList (params) {
+    return POST(`${baseUrl}/api/signature/list`, params)
+  },
+  // 添加签章
+  addSign (params) {
+    return POST(`${baseUrl}/api/signature/add`, params)
+  },
+  // 设置默认签章
+  setDefault (params) {
+    return POST(`${baseUrl}/api/signature/default`, params)
+  },
+  // 删除签章
+  deleteSign (params) {
+    return POST(`${baseUrl}/api/signature/delete`, params)
   },
 }

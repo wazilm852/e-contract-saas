@@ -15,7 +15,7 @@
                     </div>
                     <Form ref="formInline" :model="formInline" :rules="ruleInline" v-if="isPassword">
                         <FormItem prop="user">
-                            <Input type="text" class="styleInput" maxlength="11" prefix="md-person" v-model="formInline.user" placeholder="请输入手机号" />
+                            <Input type="text" class="styleInput" maxlength="11" prefix="md-person" v-model="formInline.user" @on-enter="handleSubmit('formInline')" placeholder="请输入手机号" />
                         </FormItem>
                         <FormItem prop="password">
                             <Input type="password" class="styleInput" prefix="md-lock" password v-model="formInline.password" @on-enter="handleSubmit('formInline')" placeholder="请输入密码" />
@@ -30,7 +30,7 @@
                     </Form>
                     <Form ref="formInlineM" :model="formInlineM" :rules="ruleInlineM" v-else>
                         <FormItem prop="user">
-                            <Input type="text" class="styleInput" maxlength="11" prefix="md-person" v-model="formInlineM.user" placeholder="请输入手机号" />
+                            <Input type="text" class="styleInput" maxlength="11" prefix="md-person" v-model="formInlineM.user" @on-enter="handleSubmitM('formInlineM')" placeholder="请输入手机号" />
                         </FormItem>
                         <FormItem prop="code">
                             <Input v-model="formInlineM.code" maxlength="4" prefix="md-key" class="styleInput" @on-enter="handleSubmitM('formInlineM')" placeholder="请输入验证码" />
