@@ -20,7 +20,7 @@
                         <FormItem prop="code">
                             <Input v-model="formInline.code" class="styleInput" maxlength="4" prefix="md-key" placeholder="请输入验证码" @on-enter="handleSubmit('formInline')" />
                             <span class="get-code" v-show='ifGet == true' @click='getCode'>获取验证码</span>
-                            <span class="get-code-c" v-show='ifGet == false'>{{codCount}}</span>
+                            <span class="get-code-c" v-show='ifGet == false'>{{codCount}}秒后重试</span>
                         </FormItem>
                         <FormItem class="submit">
                             <Button type="primary" @click="handleSubmit('formInline')">提交</Button>
@@ -80,7 +80,7 @@ export default {
                             this.$Message.success(res.msg);
                             this.$router.push({name: 'login'})
                         } else {
-                            this.$Message.success(res.msg);
+                            this.$Message.error(res.msg);
                         }
                     })
                 }

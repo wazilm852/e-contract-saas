@@ -6,21 +6,25 @@
         为保障电子签名的法律效力，请立即进行<span @click='modalAuthentication = true'>实名认证</span>。
       </div>
       <ul class="state">
-        <li>
-          <p>待我签</p>
-          <div>09</div>
+        <!-- <li v-for='(item, index) in statusList' :key="index" @click="toContractAdmin(item.title)">
+          <p>{{item.title}}</p>
+          <div>{{item.count}}</div>
+        </li> -->
+        <li @click="toContractAdmin(daiwo.title)">
+          <p>{{daiwo.title}}</p>
+          <div>{{daiwo.count}}</div>
         </li>
-        <li>
-          <p>待TA签</p>
-          <div>09</div>
+        <li @click="toContractAdmin(daita.title)">
+          <p>{{daita.title}}</p>
+          <div>{{daita.count}}</div>
         </li>
-        <li>
-          <p>已完成</p>
-          <div>09</div>
+        <li @click="toContractAdmin(wancheng.title)">
+          <p>{{wancheng.title}}</p>
+          <div>{{wancheng.count}}</div>
         </li>
-        <li>
-          <p>草稿箱</p>
-          <div>09</div>
+        <li @click="toContractAdmin(daifa.title)">
+          <p>{{daifa.title}}</p>
+          <div>{{daifa.count}}</div>
         </li>
       </ul>
       <div class="center">
@@ -28,7 +32,9 @@
           <h2>合同上传</h2>
           <div class="box box1">
             <div class="btn">
+              <Button type="primary" style='marginRight: 60px' v-if='!isVerified' @click='modalAuthentication = true'>本地上传</Button>
               <Upload
+                  v-else
                   :action="uploadFileUrl"
                   :before-upload="onBefore"
                   :on-success='onSuccess'
@@ -48,7 +54,10 @@
         </div>
         <div class="signAdmin">
           <h2>签章管理</h2>
-          <div class="box">
+          <div v-if='signAdminList.length' class="box">
+            <img :src="signObj.oss" class='dufault-pic' alt="">
+          </div>
+          <div v-else class="box" @click='toSignAdmin'>
             <img src="../../assets/img/home/add.png" alt="" />
             <p>您暂无签章，请点击此处添加</p>
           </div>
@@ -67,20 +76,30 @@
           v-if="this.data.length"
         >
           <template slot-scope="{ row, index }" slot="action">
-            <Button
-              type="primary"
-              size="small"
-              style="margin-right: 5px; color: #2981d9"
-              @click="toDetails(row, index)"
-              >编辑</Button
-            >
-            <Button
-              type="primary"
-              size="small"
-              style="color: #2981d9"
-              @click="del(row, index)"
-              >删除</Button
-            >
+            <span v-if="row.status == '待发起'">
+              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toSend(row, index)">发起</Button>
+              <Button type="primary" size="small" style="color: #2981D9;" @click="del(row, index)">删除</Button>
+            </span>
+            <span v-else-if="row.status == '待我签'">
+              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+              <Button type="primary" size="small" style="color: #2981D9;" @click="toSigned(row, index)">签署</Button>
+            </span>
+            <span v-else-if="row.status == '待TA签'">
+              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+              <Button type="primary" size="small" style="color: #2981D9;" @click="remind(row, index)">提醒</Button>
+            </span>
+            <span v-else-if="row.status == '已完成'">
+              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+            </span>
+            <span v-else-if="row.status == '已过期'">
+              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+            </span>
+            <span v-else-if="row.status == '已撤回'">
+              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+            </span>
+            <span v-else-if="row.status == '已拒签'">
+              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+            </span>
           </template>
         </Table>
         <div class="null" v-else>
@@ -108,6 +127,7 @@ export default {
         {
           title: "合同标题",
           key: "title",
+          tooltip: true
         },
         {
           title: "发起方",
@@ -116,6 +136,7 @@ export default {
         {
           title: "签署方",
           key: "signatory_name",
+          tooltip: true
         },
         {
           title: "发起时间",
@@ -134,17 +155,38 @@ export default {
       ],
       data: [],
       file: "",
-      uploadFileUrl: "api/api/contract/upload",
+      uploadFileUrl: "api/contract/upload",
       token: {
           token: JSON.parse(this.$vc.get('userInfo')).token
       },
-      isVerified: ''
+      isVerified: '', // 是否实名
+      signAdminList: [], //签章列表
+      signObj: {}, //默认签章
+      daiwo: {
+        title: '待我签',
+        count: 0
+      },
+      daita: {
+        title: '待TA签',
+        count: 0
+      },
+      wancheng: {
+        title: '已完成',
+        count: 0
+      },
+      daifa: {
+        title: '待发起',
+        count: 0
+      }
     };
   },
   created() {
+    console.log(this.$vc.get('clientID'))
     var userInfo = JSON.parse(this.$vc.get('userInfo'))
     this.isVerified = userInfo.is_verified
     this.showTable();
+    this.showCount();
+    this.showSigntrue();
   },
   methods: {
     // 合同表格
@@ -160,26 +202,45 @@ export default {
           }
         });
     },
-    // 跳转详情页
-    toDetails(row, index) {
-      this.$router.push({ name: "editContract", query: { con_id: row.id } });
-    },
-    // 删除
-    del(row, index) {
-      this.$api
-        .deleteContract({
-          con_id: row.id,
-        })
-        .then((res) => {
-          if (res.code == 0) {
-            this.$Message.success(res.msg);
-            this.showTable()
-          }
-        });
+    // 展示不同状态的个数
+    showCount() {
+      this.$api.top({
+
+      }).then(res=>{
+        if(res.code == 0) {
+          this.daiwo.title = res.data[0].title
+          this.daiwo.count = res.data[0].count
+          this.daita.title = res.data[1].title
+          this.daita.count = res.data[1].count
+          this.wancheng.title = res.data[2].title
+          this.wancheng.count = res.data[2].count
+          this.daifa.title = res.data[3].title
+          this.daifa.count = res.data[3].count
+        }
+      })
     },
     // 跳转合同管理
     more() {
       this.$router.push({ name: "contractAdmin" });
+    },
+    // 跳转合同管理对应 status
+    toContractAdmin(title) {
+      var status = '0'
+      switch(title) {
+        case '待我签':
+          status = '1'
+          break
+        case '待TA签':
+          status = '2'
+          break
+        case '已完成':
+          status = '3'
+          break
+        case '待发起':
+          status = '0'
+          break
+      }
+      this.$router.push({ name: "contractAdmin", query:{status: status}});
     },
     // 上传合同
     onBefore(file) {
@@ -206,13 +267,79 @@ export default {
     onSuccess(res, file, fileList) {
         if(res.code == 0) {
             this.$Message.success(res.msg)
-            this.$router.push({name: 'editContract', query:{con_id: res.data}})
+            this.$router.push({name: 'startContract', query:{id: res.data}})
+        } else {
+          this.$Message.error(res.msg)
         }
+    },
+    // 签章
+    showSigntrue() {
+      this.$api.signList({
+
+      }).then(res=>{
+        if(res.code == 0) {
+          this.signAdminList = res.data
+          this.signAdminList.forEach((item, index)=>{
+            if(item.is_default) {
+              this.signObj = item
+            }
+          })
+        }
+      })
+    },
+    // 跳转签章管理
+    toSignAdmin() {
+      this.$router.push({name: 'signAdmin'})
     },
     // 关闭去认证弹框
     sendSonData() {
       this.modalAuthentication = false
-    }
+    },
+    // 删除
+    del(row, index) {
+      this.$api.deleteContract({
+          con_id: row.id,
+      }).then(res=>{
+          if(res.code == 0) {
+              this.$Message.success(res.msg)
+              this.showContract()
+          }
+      })
+    },
+    // 提醒签署
+    remind(row, index) {
+      this.$api.sendSmsTosignature({
+        con_id: row.id,
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
+    },
+    // 去签署
+    toSigned(row, index) {
+      this.$router.push({name: 'signContract', query: {id: row.id}})
+    },
+    // 去发起
+    toSend(row, index) {
+      switch(row.option.url) {
+        case '合同转换' :
+          this.$router.push({name: 'startContract', query: {id: row.id}})
+          break
+        case '设置编辑框' :
+          this.$router.push({name: 'editContract', query: {id: row.id}})
+          break
+        case '设置签署' :
+          this.$router.push({name: 'sendContract', query: {id: row.id}})
+          break
+      }
+    },
+    // 跳转详情页
+    toDetails(row, index) {
+      this.$router.push({name: 'signDetails', query: {id: row.id}})
+    },
   },
 };
 </script>
@@ -304,6 +431,10 @@ export default {
           text-align: center;
           font-size: 14px;
           color: #333;
+          .dufault-pic{
+            width: 50%;
+            margin-top: 90px;
+          }
           img {
             margin-top: 107px;
             margin-bottom: 20px;
@@ -368,6 +499,7 @@ export default {
         text-align: center;
         margin-top: 30px;
       }
+      
     }
   }
 }
@@ -385,6 +517,9 @@ export default {
     }
     .ivu-table-cell {
       padding-left: 0;
+    }
+    .ivu-table:before{
+      height: 0;
     }
   }
   a.ivu-btn {

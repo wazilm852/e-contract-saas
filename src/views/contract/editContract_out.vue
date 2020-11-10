@@ -87,7 +87,7 @@ export default {
         },
         // 跳转至发起
         launch() {
-            this.$router.push({name: 'startcontract', query: {title: this.title}})
+            this.$router.push({name: 'startContract', query: {title: this.title}})
         }
     }
 }

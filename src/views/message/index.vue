@@ -43,12 +43,14 @@
             <div class="circular circular2">2</div>
             <span class="text3">填写新密码</span>
           </div>
-          <p>请输入12345678910接收的验证码</p>
+          <p>请输入{{phone}}接收的验证码</p>
           <div class="modal-content">
             <span class="label">验证码</span>
             <div class="input">
               <Input v-model="codePassword" maxlength="4" placeholder="请输入验证码" />
-              <span class="sendCode">发送验证码</span>
+              <!-- <span class="sendCode">发送验证码</span> -->
+              <span class="sendCode" v-show='ifGet_password == true' @click='getCode_password'>获取验证码</span>
+              <span class="sendCode sendCode-c" v-show='ifGet_password == false'>{{codCount_password}}秒后重试</span>
             </div>
           </div>
           <div slot="footer" class="okBtn">
@@ -89,12 +91,13 @@
             <div class="circular circular2">2</div>
             <span class="text3">绑定新手机号</span>
           </div>
-          <p>请输入12345678910接收的验证码</p>
+          <p>请输入{{phone}}接收的验证码</p>
           <div class="modal-content">
             <span class="label">验证码</span>
             <div class="input">
               <Input v-model="codePhone" maxlength="4" placeholder="请输入验证码" />
-              <span class="sendCode">发送验证码</span>
+              <span class="sendCode" v-show='ifGet_phone == true' @click='getCode_phone'>获取验证码</span>
+              <span class="sendCode sendCode-c" v-show='ifGet_phone == false'>{{codCount_phone}}秒后重试</span>
             </div>
           </div>
           <div slot="footer" class="okBtn">
@@ -120,7 +123,8 @@
             <span class="label">验证码</span>
             <div class="input">
               <Input v-model="newCode" maxlength="4" placeholder="请输入验证码" />
-              <span class="sendCode">发送验证码</span>
+              <span class="sendCode" v-show='ifGet_phone2 == true' @click='getCode_phone2'>获取验证码</span>
+              <span class="sendCode sendCode-c" v-show='ifGet_phone2 == false'>{{codCount_phone2}}秒后重试</span>
             </div>
           </div>
           <div slot="footer" class="okBtn">
@@ -139,6 +143,7 @@
 <script>
 import vheader from "@/components/header.vue";
 import authentication from "@/components/authentication.vue";
+import { PHONE } from '@/common/regex.js'
 export default {
   components: {
     vheader,
@@ -160,6 +165,12 @@ export default {
       isVerified: false,
       phone: '',
       name: '',
+      ifGet_password: true,
+      codCount_password: 60,
+      ifGet_phone: true,
+      codCount_phone: 60,
+      ifGet_phone2: true,
+      codCount_phone2: 60,
     };
   },
   created() {
@@ -179,21 +190,45 @@ export default {
           }
         })
     },
+    // 修改密码第一部
     okChange() {
       if (this.codePassword) {
-        this.modalchangePassword = false;
-        this.modalchangePassword2 = true;
-        this.$Message.success("验证成功");
+        this.$api.checkSms({
+          phone: this.phone,
+          code: this.codePassword
+        }).then(res=>{
+          if(res.code == 0) {
+            this.$Message.success("验证成功");
+            this.modalchangePassword = false;
+            this.modalchangePassword2 = true;
+          } else {
+            this.$Message.error(res.msg)
+          }
+        })
       } else {
         this.modalchangePassword = true;
         this.$Message.error("验证码不能为空");
       }
     },
+    // 修改密码第二s部
+    
     okChange2() {
+      var obj = JSON.parse(this.$vc.get('password'))
       if(this.password && this.passwordNew) {
         if(this.password == this.passwordNew) {
-          this.$Message.success("修改成功!");
-          this.modalchangePassword2 = false
+          this.$api.editPassword({
+            password: this.password,
+            new_password: this.passwordNew
+          }).then(res=>{
+            if(res.code == 0) {
+              this.$Message.success(res.msg);
+              obj.password = this.password
+              this.$vc.set('password',JSON.stringify(obj));
+              this.modalchangePassword2 = false
+            } else {
+              this.$Message.error(res.msg);
+            }
+          })
         } else {
           this.$Message.error("两次密码输入不一致!");
         }
@@ -201,25 +236,119 @@ export default {
         this.$Message.error("密码不能为空!");
       }
     },
+    // 修改手机号第一部
     okPhone() {
       if (this.codePhone) {
-        this.modalchangePhone = false;
-        this.modalchangePhone2 = true;
-        this.$Message.success("验证成功");
+        this.$api.checkSms({
+          phone: this.phone,
+          code: this.codePhone
+        }).then(res=>{
+          if(res.code == 0) {
+            this.$Message.success("验证成功");
+            this.modalchangePhone = false;
+            this.modalchangePhone2 = true;
+          } else {
+            this.$Message.error(res.msg)
+          }
+        })
       } else {
         this.modalchangePhone = true;
         this.$Message.error("验证码不能为空");
       }
     },
+    // 修改手机号第二部
     okPhone2() {
-      if(this.newPhone && this.newCode) {
-        this.$Message.success("修改成功!");
-        this.modalchangePhone2 = false
+      console.log(PHONE.test(this.newPhone))
+      if(PHONE.test(this.newPhone) && this.newCode) {
+        this.$api.updatePhone({
+          phone: this.newPhone,
+          code: this.newCode
+        }).then(res=>{
+          if(res.code == 0) {
+            this.$Message.success(res.msg)
+
+            var obj = JSON.parse(this.$vc.get('password'))
+            obj.phone = this.phone
+            this.$vc.set('password',JSON.stringify(obj));
+
+            var obj2 = JSON.parse(this.$vc.get('userInfo'))
+            obj2.phone = this.phone
+            this.$vc.set('password',JSON.stringify(obj2));
+
+            this.show()
+            this.modalchangePhone2 = false
+          } else {
+            this.$Message.error(res.msg)
+          }
+        })
       } else {
-        this.$Message.error('内容不能为空!')
+        this.$Message.error('内容格式不正确!')
       }
     },
 
+    // 获取密码验证码
+    getCode_password() {
+      this.$api.getCode({
+          phone: this.phone
+      }).then(res=>{
+          if(res.code == 0) {
+              this.$Message.success(res.msg);
+              this.ifGet_password = false
+              var t = setInterval(()=> {
+                  this.codCount_password -- 
+                  if(this.codCount_password <= 0) {
+                      this.codCount_password = 60
+                      clearInterval(t)
+                      this.ifGet_password = true
+                  }
+              }, 1000)
+          } else {
+              this.$Message.error(res.msg);
+          }
+      })
+    },
+    // 获取手机号验证码
+    getCode_phone() {
+      this.$api.getCode({
+          phone: this.phone
+      }).then(res=>{
+          if(res.code == 0) {
+              this.$Message.success(res.msg);
+              this.ifGet_phone = false
+              var t = setInterval(()=> {
+                  this.codCount_phone -- 
+                  if(this.codCount_phone <= 0) {
+                      this.codCount_phone = 60
+                      clearInterval(t)
+                      this.ifGet_phone = true
+                  }
+              }, 1000)
+          } else {
+              this.$Message.error(res.msg);
+          }
+      })
+    },
+    // 获取手机号验证码2
+    getCode_phone2() {
+      this.$api.getCode({
+          phone: this.newPhone
+      }).then(res=>{
+          if(res.code == 0) {
+              this.$Message.success(res.msg);
+              this.ifGet_phone2 = false
+              var t = setInterval(()=> {
+                  this.codCount_phone2 -- 
+                  if(this.codCount_phone2 <= 0) {
+                      this.codCount_phone2 = 60
+                      clearInterval(t)
+                      this.ifGet_phone2 = true
+                  }
+              }, 1000)
+          } else {
+              this.$Message.error(res.msg);
+          }
+      })
+    },
     // 关闭去认证弹框
     sendSonData() {
       this.modalAuthentication = false
@@ -373,6 +502,9 @@ export default {
               font-size: 14px;
               color: #2981d9;
               cursor: pointer;
+            }
+            .sendCode-c{
+              color: #999;
             }
           }
         }

@@ -1,28 +1,31 @@
 <template>
-  <div class="startcontract">
+  <div class="startContract">
     <vheader></vheader>
     <div class="content">
-      <!-- <div class="upload">
+      <div class="upload">
         <div class="title">
           <img src="../../assets/img/contract/1.png" alt />
           上传合同
         </div>
         <div class="box">
-          <div class="left"></div>
+          <div class="left">
+            <img :src="url" alt="">
+          </div>
           <div class="center">
             <div class="text">
               <div class="text-l">合同名称</div>
               <div class="text-r">上传成功</div>
             </div>
-            <Progress :percent="100" />
+            <Progress :percent="percent" />
           </div>
-          <div class="right">
+          <div class="right" v-if="$route.query.type == 'local'">
             <Button class="btn">重新上传</Button>
           </div>
         </div>
-      </div> -->
+      </div>
       <div class="contractMessage">
         <div class="title">
+          <img src="../../assets/img/contract/2.png" alt />
           填写合同信息
         </div>
         <div class="box">
@@ -34,7 +37,7 @@
             <span class="label">签署截止日期</span>
             <Row>
               <Col span="12">
-                <DatePicker type="date" :options="options3" placeholder="默认截止时间是七天"></DatePicker>
+                <DatePicker type="date" :options="options3" @on-change='changeDate' placeholder="默认截止时间是七天"></DatePicker>
               </Col>
             </Row>
             <span class="text">所有签署方须在截止日期前完成签署</span>
@@ -43,6 +46,7 @@
       </div>
       <div class="signer">
         <div class="title">
+          <img src="../../assets/img/contract/3.png" alt />
           填写签署方信息
         </div>
         <div class="table">
@@ -75,11 +79,11 @@
         >
           <div class="signer-name">签署人</div>
           <div class="name">
-            <Input type="text" v-model="item.name" @on-blur='nameBlue(item.name)' placeholder="请输入姓名" />
+            <Input type="text" :disabled="item.nFlag" v-model="item.name" @on-blur='nameBlue(item.name, index)' placeholder="请输入姓名" />
             <p v-if='nameFlag && indexFlag == index'>请输入姓名</p>
           </div>
           <div class="phone">
-            <Input type="text" v-model="item.phone" @on-blur='phoneBlue(item.phone, index)' placeholder="请输入手机号" />
+            <Input type="text" :disabled="item.pFlag" v-model="item.phone" @on-blur='phoneBlue(item.phone, index)' placeholder="请输入手机号" />
             <p v-if='phoneFlag && indexFlag == index'>请输入正确格式的手机号</p>
             <span v-if="item.is_verified == 1 || item.is_verified == '已认证'">
               <img src="../../assets/img/contract/certified.png" alt />
@@ -98,7 +102,7 @@
           <div class="add" @click="addSigner">
             <img src="../../assets/img/contract/add.png" alt />添加签署方
           </div>
-          <div class="add" @click="modalMailList = true">
+          <div class="add" @click="openBook">
             <img src="../../assets/img/contract/add.png" alt />从通讯录添加
           </div>
         </div>
@@ -116,8 +120,36 @@
         <!-- 实名认证modal -->
         <authentication :flag='this.modalAuthentication' @clFlag="sendSonData"></authentication>
       </div>
+      <div class="review" v-if="$vc.get('clientID')">
+        <div class="title">
+          <img src="../../assets/img/contract/4.png" alt />
+          选择需要关联的在审件
+        </div>
+        <div class="table">
+          <div class="id">ID</div>
+          <div class="name">客户姓名</div>
+          <div class="phone">合同ID</div>
+        </div>
+        <ul>
+          <li class="item" v-for='item in clientList' :key="item.id">
+            <input name="check" :value="item.id" v-model="checkId" type="radio">
+            <div class="id">{{item.id}}</div>
+            <div class="name">{{item.truename}}</div>
+            <div class="phone">{{item.contract_num}}</div>
+          </li>
+        </ul>
+      </div>
+
       <div class="next">
-        <Button class="btn" @click="next">下一步</Button>
+        <div v-if='isSpin' class='btn'>
+          <Col class="demo-spin-col" span="8">
+              <Spin fix>
+                  <Icon type="ios-loading" size=18 class="demo-spin-icon-load"></Icon>
+                  <div>跳转中</div>
+              </Spin>
+          </Col>
+        </div>
+        <Button class="btn" @click="next" v-else>下一步</Button>
       </div>
     </div>
   </div>
@@ -134,11 +166,13 @@ export default {
   },
   data() {
     return {
+      pFlag: true,
+      percent: 0, // 进度条
       current: 1,
       pageSize: 10,
       total: 0,
       isVerified: 0,  //是否实名认证 
-      contractName: this.$route.query.title,
+      contractName: '',
       modalMailList: false,
       modalAuthentication: false,
       options3: {
@@ -146,8 +180,9 @@ export default {
           return date && date.valueOf() < Date.now() - 86400000;
         }
       },
-      initiator: {},
-      list: [],
+      newDate: '', // 选择后的时间
+      initiator: {}, // 发起人数据
+      list: [], // 签署人列表
       columns: [
         {
           type: "selection",
@@ -171,7 +206,13 @@ export default {
       nameFlag: false,
       phoneFlag: false,
       selectionBook: [], //通讯录选中的签署人
-      indexFlag: 0
+      indexFlag: 0,
+      url: '', // 合同预览图片
+      phoneList: [],
+      is_textEdits: 0, //判断有无编辑框
+      clientList: [], //crm再审件人员信息
+      checkId: '', // crm再审件id
+      isSpin: '', //loading切换
     };
   },
   created() {
@@ -179,9 +220,58 @@ export default {
     this.initiator.name = userInfo.name ? userInfo.name : '游客'
     this.initiator.phone = userInfo.phone
     this.isVerified = userInfo.is_verified
-    this.showBook()
+    this.toPercent()
+    this.show()
+
+    console.log(this.$vc.get('clientID'))
+    if(this.$vc.get('clientID')) {
+      this.clientShow()
+    }
+    // newDate
   },
   methods: {
+    // 展示合同信息
+    show() {
+      this.$api.signFirst({
+        con_id: this.$route.query.id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.url = res.data.imgs[0].url
+          this.contractName = res.data.title
+          this.is_textEdits = res.data.is_textEdits
+        }
+      })
+    },
+    // 展示crm再审件客户信息
+    clientShow() {
+      var arr = JSON.parse(this.$vc.get('clientID'))
+      this.$api.clientList({
+        list: arr
+      }).then(res=>{
+        if(res.code == 0) {
+          this.clientList = res.data
+        }
+      })
+    },
+    // 展示合同上传进度条
+    toPercent() { 
+      var t = setInterval(() => {
+        this.percent++
+        if(this.percent >= 100) {
+          this.percent = 100
+          clearInterval(t)
+        }
+      });
+    },
+    // 选择时间
+    changeDate(data) {
+      this.newDate = data
+    },
+    // 打开通讯录
+    openBook() {
+      this.showBook()
+      this.modalMailList = true
+    },
     // 通讯录
     showBook() {
       this.$api.bookList({
@@ -205,12 +295,29 @@ export default {
     },
     // 选择联系人
     selectionChange(value) {
+      value.forEach(item => {
+        item.nFlag = true
+        item.pFlag = true
+      });
       this.selectionBook = value
     },
     // 通讯录ok按钮
     okAdd() {
+      var list_s = JSON.stringify(this.list)
       this.selectionBook.forEach((item, index) => {
-        this.list.push(item)
+        var item_s = JSON.stringify(item)
+        if(item.phone != this.initiator.phone) {
+          if(list_s.indexOf(item_s) == -1) {
+            this.list.push(item)
+            this.phoneList.push(item.phone)
+          } else {
+            return
+          }
+        } else {
+          this.$Message.error('不能添加自己为签署人')
+          return
+        }
+        
       })
       this.modalMailList = false
     },
@@ -227,7 +334,9 @@ export default {
           this.list.push({
             name: "",
             phone: "",
-            is_verified: 0
+            is_verified: 0,
+            pFlag: false,
+            nFalg: false,
           });
         } else {
           this.$Message.error("最多添加10个签署人");
@@ -245,11 +354,58 @@ export default {
     // 删除签署人
     del(index) {
       this.list.splice(index, 1);
+      this.phoneList.splice(index, 1);
     },
     // 下一步
     next() {
       if(this.isVerified) {
-        this.$router.push({name: 'signContract'})
+        if(this.$vc.get('clientID')) {
+          if(this.checkId) {
+            var arr = JSON.stringify(this.list)
+            this.isSpin = true
+            this.$api.signFirstSave({
+              con_id: this.$route.query.id,
+              title: this.contractName,
+              signatory: arr,
+              end_time: this.newDate,
+              checking_id: this.checkId
+            }).then(res=>{
+              if(res.code == 0) {
+                this.isSpin = false
+                if(this.is_textEdits) {
+                  this.$router.push({name: 'editContract', query: {id: this.$route.query.id}})
+                } else {
+                  this.$router.push({name: 'sendContract', query: {id: this.$route.query.id}})
+                }
+              } else {
+                this.isSpin = false
+                this.$Message.error(res.msg)
+              }
+            })
+          } else {
+            this.$Message.error('请选择在审件!')
+          }
+        } else {
+          var arr = JSON.stringify(this.list)
+          this.isSpin = true
+          this.$api.signFirstSave({
+            con_id: this.$route.query.id,
+            title: this.contractName,
+            signatory: arr,
+            end_time: this.newDate,
+          }).then(res=>{
+            if(res.code == 0) {
+              this.isSpin = false
+              if(this.is_textEdits) {
+                this.$router.push({name: 'editContract', query: {id: this.$route.query.id}})
+              } else {
+                this.$router.push({name: 'sendContract', query: {id: this.$route.query.id}})
+              }
+            } else {
+              this.$Message.error(res.msg)
+            }
+          })
+        }
       } else {
         this.modalAuthentication = true
       }
@@ -259,9 +415,10 @@ export default {
       this.modalAuthentication = false
     },
     // 姓名离焦
-    nameBlue(name) {
+    nameBlue(name, index) {
       if(name) {
         this.nameFlag = false
+        this.list[index].nFlag = true
       } else {
         this.nameFlag = true
       }
@@ -270,14 +427,39 @@ export default {
     phoneBlue(phone, index) {
       this.indexFlag = index
       if(PHONE.test(phone)) {
-        this.phoneFlag = false
-        this.$api.searchBook({
-          phone: phone
-        }).then(res=>{
-          if(res.code == 0) {
-            this.list[index].is_verified = res.data.is_verified
+        if(phone == this.initiator.phone) {
+          this.$Message.error('不能添加自己为签署人')
+          this.list.splice(index,1);
+        } else {
+          if(this.phoneList.length) {
+            if(this.phoneList.indexOf(phone) != -1) {
+              this.list.splice(index,1);
+              return
+            } else {
+              this.phoneList.push(phone)
+              this.phoneFlag = false
+              this.$api.searchBook({
+                phone: phone
+              }).then(res=>{
+                if(res.code == 0) {
+                  this.list[index].is_verified = res.data.is_verified
+                  this.list[index].pFlag = true
+                }
+              })
+            }
+          } else {
+            this.phoneList.push(phone)
+            this.phoneFlag = false
+            this.$api.searchBook({
+              phone: phone
+            }).then(res=>{
+              if(res.code == 0) {
+                this.list[index].is_verified = res.data.is_verified
+                this.list[index].pFlag = true
+              }
+            })
           }
-        })
+        }
       } else {
         this.phoneFlag = true
       }
@@ -287,7 +469,7 @@ export default {
 </script>
 
 <style lang="less" scoped>
-.startcontract {
+.startContract {
   width: 100%;
   height: 100%;
   .content {
@@ -321,6 +503,10 @@ export default {
           width: 180px;
           height: 200px;
           border: 1px solid #e0e0e0;
+          img{
+            width: 100%;
+            height: 100%;
+          }
         }
         .center {
           width: 600px;
@@ -515,6 +701,55 @@ export default {
         }
       }
     }
+    .review{
+      width: 100%;
+      box-shadow: 0px 0px 21px 0px rgba(14, 57, 111, 0.2);
+      padding: 30px;
+      margin-bottom: 30px;
+      .title {
+        font-size: 18px;
+        font-weight: bold;
+        color: #333333;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        img {
+          margin-right: 7px;
+        }
+      }
+      .table{
+        width: 100%;
+        display: flex;
+        border-top: 1px solid #EAEAEA;
+        border-bottom: 1px solid #EAEAEA;
+        padding: 12px 64px;
+        .id, .name, .phone{
+          width: 220px;
+          font-size: 16px;
+          color: #333333;
+        }
+      }
+      ul{
+        padding-top: 10px;
+        .item{
+          width: 100%;
+          display: flex;
+          padding: 10px 22px;
+          align-items: center;
+          background-color: #F6F8FD;
+          margin-bottom: 10px;
+          input[type= 'radio'] {
+            margin-right: 29px;
+          }
+          .id, .name, .phone{
+            width: 220px;
+            font-size: 16px;
+            color: #333333;
+          }
+        }
+      }
+      
+    }
     .next {
       width: 100%;
       height: 30px;
@@ -610,6 +845,44 @@ export default {
         }
       }
     }
+  }
+}
+.startContract{
+  .demo-spin-icon-load{
+      animation: ani-demo-spin 1s linear infinite;
+  }
+  @keyframes ani-demo-spin {
+      from { transform: rotate(0deg);}
+      50%  { transform: rotate(180deg);}
+      to   { transform: rotate(360deg);}
+  }
+  .demo-spin-col{
+      width: 100%;
+      height: 100%;
+      position: relative;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      .ivu-spin{
+        color: #fff;
+      }
+      .ivu-spin-fix{
+        background-color: rgba(255, 255, 255, 0.5);
+      }
+      .ivu-spin{
+        .ivu-spin-main{
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          .ivu-spin-text{
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 10px;
+          }
+        }
+      }
   }
 }
 </style>

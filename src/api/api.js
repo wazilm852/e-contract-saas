@@ -4,8 +4,8 @@ import { Get, POST } from './http'
 let baseUrl = '';
 let exclUrl = '';
 if (process.env.NODE_ENV === 'production') {
-  baseUrl = 'http://contract/';
-  exclUrl = 'http://contract/';
+  baseUrl = 'https://www.dianzihetong.xin';
+  exclUrl = 'https://www.dianzihetong.xin';
 } else if (process.env.NODE_ENV === 'development') {
   baseUrl = '/api';
   exclUrl = '/api'
@@ -29,6 +29,10 @@ export default {
   // 发送短信
   getCode (params) {
     return POST(`${baseUrl}/base/getSmsCode`, params)
+  },
+  // 验证短信
+  checkSms (params) {
+    return POST(`${baseUrl}/base/checkSms`, params)
   },
 
   // 系统模板
@@ -76,10 +80,6 @@ export default {
   editContract (params) {
     return POST(`${baseUrl}/api/contract/edit`, params)
   },
-  // 保存合同
-  save (params) {
-    return POST(`${baseUrl}/api/contract/save`, params)
-  },
   // 删除合同
   deleteContract (params) {
     return POST(`${baseUrl}/api/contract/delete`, params)
@@ -88,6 +88,14 @@ export default {
   // 基本信息
   info (params) {
     return POST(`${baseUrl}/api/user/info`, params)
+  },
+  // 修改手机号
+  updatePhone (params) {
+    return POST(`${baseUrl}/api/user/updatePhone`, params)
+  },
+  // 修改密码
+  editPassword (params) {
+    return POST(`${baseUrl}/api/user/editPassword`, params)
   },
 
   // 通讯录列表
@@ -126,5 +134,83 @@ export default {
   // 删除签章
   deleteSign (params) {
     return POST(`${baseUrl}/api/signature/delete`, params)
+  },
+
+  // 模板使用-模板转合同（1）
+  toContract (params) {
+    return POST(`${baseUrl}/api/template/toContract`, params)
+  },
+
+  // 合同签署-1（展示合同标题，合同图片）
+  signFirst (params) {
+    return POST(`${baseUrl}/api/contract/signFirst`, params)
+  },
+  // 合同签署-1-1（保存合同签署人信息）
+  signFirstSave (params) {
+    return POST(`${baseUrl}/api/contract/signFirstSave`, params)
+  },
+  // 合同签署-2（展示编辑框和合同图片）
+  signSecond (params) {
+    return POST(`${baseUrl}/api/contract/signSecond`, params)
+  },
+  // 合同签署-3（合并编辑框的文字）
+  textEditsSave (params) {
+    return POST(`${baseUrl}/api/contract/textEditsSave`, params)
+  },
+  // 合同签署-4（等待发起人签署）
+  setsignature (params) {
+    return POST(`${baseUrl}/api/contract/setsignature`, params)
+  },
+  //合同签署-5（发起人签署）
+  sponSignSave (params) {
+    return POST(`${baseUrl}/api/contract/sponSignSave`, params)
+  },
+  // 合同签署-6（短信提醒签署方）
+  sendSmsTosignature (params) {
+    return POST(`${baseUrl}/api/contract/sendSmsTosignature`, params)
+  },
+  // 保存草稿
+  save (params) {
+    return POST(`${baseUrl}/api/contract/save`, params)
+  },
+  // 合同详情
+  view (params) {
+    return POST(`${baseUrl}/api/contract/view`, params)
+  },
+  // 拒签
+  refuse (params) {
+    return POST(`${baseUrl}/api/contract/refuse`, params)
+  },
+  // 撤回
+  withdraw (params) {
+    return POST(`${baseUrl}/api/contract/withdraw`, params)
+  },
+  // 待我签详情
+  meSign (params) {
+    return POST(`${baseUrl}/api/contract/meSign`, params)
+  },
+  // 首页展示的合同统计
+  top (params) {
+    return POST(`${baseUrl}/api/contract/top`, params)
+  },
+  // 合同签署-8（签署方签署）
+  meSignSave (params) {
+    return POST(`${baseUrl}/api/contract/meSignSave`, params)
+  },
+  // 二维码跳转H5
+  h5QrPng (params) {
+    return POST(`${baseUrl}/api/cert/h5QrPng`, params)
+  },
+  // CRM跳转到电子合同【自动登录】
+  crmCheck (params) {
+    return POST(`${baseUrl}/base/crmCheck`, params)
+  },
+  // 在审件列表【从CRM过来】
+  clientList (params) {
+    return POST(`${baseUrl}/api/check/list`, params)
+  },
+  // 查询认证结果
+  checkCertAliPay (params) {
+    return POST(`${baseUrl}/api/cert/checkCertAliPay`, params)
   },
 }

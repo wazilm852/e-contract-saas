@@ -8,8 +8,30 @@
           <!-- table -->
           <Table :columns="columns" :data="data" class="table" v-if="data.length">
             <template slot-scope="{ row, index }" slot="action">
-              <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">编辑</Button>
-              <Button type="primary" size="small" style="color: #2981D9;" @click="del(row, index)">删除</Button>
+              <span v-if="row.status == '待发起'">
+                <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toSend(row, index)">发起</Button>
+                <Button type="primary" size="small" style="color: #2981D9;" @click="del(row, index)">删除</Button>
+              </span>
+              <span v-else-if="row.status == '待我签'">
+                <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+                <Button type="primary" size="small" style="color: #2981D9;" @click="toSigned(row, index)">签署</Button>
+              </span>
+              <span v-else-if="row.status == '待TA签'">
+                <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+                <Button type="primary" size="small" style="color: #2981D9;" @click="remind(row, index)">提醒</Button>
+              </span>
+              <span v-else-if="row.status == '已完成'">
+                <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+              </span>
+              <span v-else-if="row.status == '已过期'">
+                <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+              </span>
+              <span v-else-if="row.status == '已撤回'">
+                <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+              </span>
+              <span v-else-if="row.status == '已拒签'">
+                <Button type="primary" size="small" style="margin-right: 5px;color: #2981D9;" @click="toDetails(row, index)">详情</Button>
+              </span>
             </template>
           </Table>
           <div class="null" v-else>
@@ -33,11 +55,12 @@ export default {
   data() {
     return {
       list: [],  // 合同状态列表
-      tabValue: '',   // tab切换
+      tabValue: 0,   // tab切换
       columns: [    // 表格标题
         {
           title: "合同标题",
-          key: "title"
+          key: "title",
+          tooltip: true
         },
         {
           title: "发起方",
@@ -45,7 +68,8 @@ export default {
         },
         {
           title: "签署方",
-          key: "signatory_name"
+          key: "signatory_name",
+          tooltip: true
         },
         {
           title: "发起时间",
@@ -67,10 +91,10 @@ export default {
       pageSize: 10, // 每页几条
       current: 1, // 当前页
       searchValue: '', //搜索内容
-      status: '0', // 当前状态
     };
   },
-  created() {
+  mounted() {
+    this.tabValue = this.$route.query.status ? this.$route.query.status : '0'
     this.showStatus()
     this.showContract()
   },
@@ -80,7 +104,6 @@ export default {
       this.$api.statusList({}).then(res=> {
         if(res.code == 0) {
           this.list = res.data
-          this.tabValue = res.data[0].key
         }
       })
     },
@@ -88,7 +111,7 @@ export default {
     showContract() {
       this.$api.contractList({
         title: this.searchValue,
-        status: this.status,
+        status: this.tabValue,
         page: this.current,
         limit: this.pageSize
       }).then(res=> {
@@ -104,7 +127,7 @@ export default {
     },
     // 切换tabs
     changeTabs(name) {
-      this.status = name
+      this.tabValue = name
       this.searchValue = ''
       this.current = 1
       this.showContract()
@@ -114,10 +137,7 @@ export default {
       this.current = page
       this.showContract()
     },
-    // 跳转详情页
-    toDetails(row, index) {
-      this.$router.push({name: 'editContract', query: {con_id: row.id}})
-    },
+    
     // 删除
     del(row, index) {
       this.$api.deleteContract({
@@ -128,7 +148,41 @@ export default {
               this.showContract()
           }
       })
-    }
+    },
+    // 提醒签署
+    remind(row, index) {
+      this.$api.sendSmsTosignature({
+        con_id: row.id,
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
+    },
+    // 去签署
+    toSigned(row, index) {
+      this.$router.push({name: 'signContract', query: {id: row.id}})
+    },
+    // 去发起
+    toSend(row, index) {
+      switch(row.option.url) {
+        case '合同转换' :
+          this.$router.push({name: 'startContract', query: {id: row.id}})
+          break
+        case '设置编辑框' :
+          this.$router.push({name: 'editContract', query: {id: row.id}})
+          break
+        case '设置签署' :
+          this.$router.push({name: 'sendContract', query: {id: row.id}})
+          break
+      }
+    },
+    // 跳转详情页
+    toDetails(row, index) {
+      this.$router.push({name: 'signDetails', query: {id: row.id}})
+    },
   }
 };
 </script>

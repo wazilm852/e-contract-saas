@@ -179,10 +179,12 @@ export default {
             phone: this.formInline.phone
           }).then(res=>{
             if(res.code == 0) {
-              this.$Message.success("添加成功!");
+              this.$Message.success(res.msg);
               this.modalAddContacts = false;
               this.$refs[name].resetFields();
               this.show()
+            } else {
+              this.$Message.error(res.msg);
             }
           })
         }

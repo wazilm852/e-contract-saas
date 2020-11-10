@@ -21,9 +21,24 @@ const routes = [
     component: () => import('../views/login/forget.vue')
   },
   {
+    path: '/protocol',
+    name: 'protocol',
+    component: () => import('../views/login/protocol.vue')
+  },
+  {
+    path: '/terms',
+    name: 'terms',
+    component: () => import('../views/login/terms.vue')
+  },
+  {
     path: '/certification',
     name: 'certification',
     component: () => import('../views/login/certification.vue')
+  },
+  {
+    path: '/authing',
+    name: 'authing',
+    component: () => import('../views/home/authing.vue')
   },
   {
     path: '/home',
@@ -51,9 +66,14 @@ const routes = [
     component: () => import('../views/message/index.vue')
   },
   {
-    path: '/startcontract',
-    name: 'startcontract',
-    component: () => import('../views/contract/startcontract.vue')
+    path: '/startContract',
+    name: 'startContract',
+    component: () => import('../views/contract/startContract.vue')
+  },
+  {
+    path: '/sendContract',
+    name: 'sendContract',
+    component: () => import('../views/contract/sendContract.vue')
   },
   {
     path: '/signContract',
@@ -83,11 +103,12 @@ const routes = [
 ]
 
 const router = new VueRouter({
+  // mode: 'history',
   routes
 })
 
 router.beforeEach((to, from, next) => {
-  if (to.path === '/') {
+  if (to.path === '/' || to.path === '/register' || to.path === '/forget' || to.path === '/verified' || to.path === '/verified_status' ||  to.path === '/authing' || to.path === '/protocol' ||  to.path === '/terms') {
     next();
   } else {
     let userInfo = vc.get('userInfo')

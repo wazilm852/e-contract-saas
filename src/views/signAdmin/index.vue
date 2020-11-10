@@ -54,7 +54,17 @@
           </div>
           <div class="footer">
             <Button @click="clear">清空</Button>
-            <Button type="primary" @click="okAdd">提交</Button>
+            
+            <div v-if='isSpin' class='col-box'>
+              <Col class="demo-spin-col" span="8">
+                  <Spin fix>
+                      <Icon type="ios-loading" size=18 class="demo-spin-icon-load"></Icon>
+                      <div>加载中</div>
+                  </Spin>
+              </Col>
+            </div>
+            <Button type="primary" @click="okAdd" v-else>提交</Button>
+            
           </div>
         </div>
       </div>
@@ -75,7 +85,9 @@ export default {
       modalSign: false,
       canvasMoveUse: false,
       defortColor: "#000000",
-      list: []
+      list: [],
+      isSpin: false,
+      isSign: false,
     };
   },
   created() {
@@ -142,6 +154,7 @@ export default {
         canvasY = e.clientY - t.offsetTop + document.documentElement.scrollTop;
         this.ctx.lineTo(canvasX, canvasY);
         this.ctx.stroke();
+        this.isSign = true
       }
     },
     canvasUp(e) {
@@ -152,21 +165,68 @@ export default {
     },
     // 清空
     clear() {
+      this.isSign = false
       this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
     },
     okAdd() {
+      this.isSpin = true
       var base64Img = this.canvas.toDataURL('image/jpg');
-      this.$api.addSign({
-        img: base64Img
-      }).then(res=>{
-        if(res.code == 0) {
-          this.$Message.success(res.msg)
-          this.modalSign = false
-          this.signList()
-        } else {
-          this.$Message.error(res.msg)
+      if(this.isSign) {
+
+        
+
+        // this.$api.addSign({
+        //   img: base64Img
+        // }).then(res=>{
+        //   if(res.code == 0) {
+        //     this.isSpin = false
+        //     this.ctx.clearRect(0, 0, this.ctx.canvas.width, this.ctx.canvas.height);
+        //     this.$Message.success(res.msg)
+        //     this.modalSign = false
+        //     this.signList()
+        //   } else {
+        //     this.$Message.error(res.msg)
+        //   }
+        // })
+
+
+
+        var obj = {
+          base64: base64Img
         }
-      })
+        var that = this
+        var token = JSON.parse(this.$vc.get('userInfo')).token;
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', 'api/signature/add');
+        xhr.setRequestHeader("token",token)
+        xhr.setRequestHeader("Accept",'application/json, text/javascript, */*')
+        xhr.send(JSON.stringify(obj));
+        xhr.onreadystatechange = function() {
+          if (xhr.readyState === 4) { // 成功完成
+              // 判断响应结果:
+              if (xhr.status === 200) {
+                  if(JSON.parse(xhr.responseText).code == 0) {
+                    that.isSpin = false
+                    that.ctx.clearRect(0, 0, that.ctx.canvas.width, that.ctx.canvas.height);
+                    that.$Message.success(res.msg)
+                    that.modalSign = false
+                    that.signList()
+                  } else {
+                    that.$Message.error(res.msg)
+                  }
+              } else {
+                  // 失败，根据响应码判断失败原因:
+              }
+          } else {
+              // HTTP请求还在继续...
+          }
+        }
+
+
+      } else {
+        this.$Message.error('请先绘制签名')
+      }
+      
     },
     close() {
       this.modalSign = false;
@@ -322,9 +382,62 @@ export default {
             height: 40px;
             border-radius: 4px;
           }
+          .col-box{
+            width: 100px;
+            height: 40px;
+            border-radius: 4px;
+            background-color: #2D8CF0;
+            overflow: hidden;
+            .demo-spin-col{
+              width: 100%;
+              height: 100%;
+              
+            }
+          }
         }
       }
     }
+  }
+  
+}
+</style>
+<style lang="less">
+.signAdmin{
+  .demo-spin-icon-load{
+      animation: ani-demo-spin 1s linear infinite;
+  }
+  @keyframes ani-demo-spin {
+      from { transform: rotate(0deg);}
+      50%  { transform: rotate(180deg);}
+      to   { transform: rotate(360deg);}
+  }
+  .demo-spin-col{
+      width: 100%;
+      height: 100%;
+      position: relative;
+      border: 1px solid #eee;
+      border-radius: 4px;
+      .ivu-spin{
+        color: #fff;
+      }
+      .ivu-spin-fix{
+        background-color: rgba(255, 255, 255, 0.5);
+      }
+      .ivu-spin{
+        .ivu-spin-main{
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: center;
+          .ivu-spin-text{
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-around;
+            padding: 0 10px;
+          }
+        }
+      }
   }
 }
 </style>

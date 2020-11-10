@@ -35,7 +35,7 @@
                         <FormItem prop="code">
                             <Input v-model="formInlineM.code" maxlength="4" prefix="md-key" class="styleInput" @on-enter="handleSubmitM('formInlineM')" placeholder="请输入验证码" />
                             <span class="get-code" v-show='ifGet == true' @click='getCode'>获取验证码</span>
-                            <span class="get-code-c" v-show='ifGet == false'>{{codCount}}</span>
+                            <span class="get-code-c" v-show='ifGet == false'>{{codCount}}秒后重试</span>
                         </FormItem>
                         <div class="bottom">
                             <div></div>
@@ -145,7 +145,11 @@ export default {
                         code: this.formInlineM.code,
                         type: 'smscode',
                     }).then(res=>{
-                        console.log(res)
+                        this.$store.dispatch('login',res.data)
+                        this.$vc.set('password',JSON.stringify({
+                            phone: this.formInline.user,
+                            isRemember: this.isRemember,
+                        }));
                         if(res.code == 0) {
                             this.$Message.success(res.msg);
                             this.$router.push({name: 'home'})

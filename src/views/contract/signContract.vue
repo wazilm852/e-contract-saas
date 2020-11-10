@@ -1,21 +1,22 @@
 <template>
-  <div class="signContract">
+  <div class="signContent">
     <vheader></vheader>
     <div class="title">
       <div class="back" @click="back">
         <img src="../../assets/img/contract/back.png" alt />
       </div>
-      <h2>合同名称</h2>
+      <h2>{{contractTitle}}</h2>
       <div></div>
     </div>
     <div class="content">
       <ul class="left">
         <li
-          v-for="(item, index) in leftList"
+          v-for="(item, index) in centerList"
           :key="index"
           :class="[leftIndex == index ? 'click' : '']"
           @click="jump(index)"
         >
+          <img :src="item.url" alt="">
           <div class="triangle">
             <p>{{index + 1}}</p>
           </div>
@@ -23,70 +24,28 @@
       </ul>
       <div class="center">
         <div class="contract" v-for="(item, index) in centerList" :key="index">
-          <!-- 自己默认签章 -->
-          <div
-            class="contract-sign"
-            v-for="(x, i) in item.signList"
-            :key="i"
-            :style="{top: x.positionY + 'px',left: x.positionX + 'px'}"
-            @mousedown="move($event, index, i, 0)"
-          >
-            <div class="mark"></div>
-            <img
-              src="../../assets/img/contract/del.png"
-              class="del-pic"
-              @click="delect(index, i, 0)"
-              alt
-            />
-            <img src="../../assets/img/sign/sign.png" class="default-pic" alt />
-          </div>
-
           <!-- 待他人签的签署区域 -->
           <div
             class="contract-sign sign-region"
-            v-for="(y, i) in item.regionList"
+            v-for="(y, i) in item.signInfos_signatory"
             :key="'region' + i"
-            :style="{top: y.positionY + 'px', left: y.positionX + 'px'}"
-            @mousedown="move($event, index, i, 1)"
+            :style="{top: y.lefttopy + 'px', left: y.lefttopx + 'px'}"
           >
-            <div class="mark"></div>
-            <img
-              src="../../assets/img/contract/del.png"
-              class="del-pic"
-              @click="delect(index, i, 1)"
-              alt
-            />
-            <p>闫泽鹏签署区域</p>
+            <img v-if='signFlag' class='default-pic' :src="signObj.oss" alt="">
+            <p v-else>{{y.name}}签署区域</p>
           </div>
 
-          <!-- 自定义输入框 -->
-          <div 
-          class="text" 
-          v-for="(z, i) in item.text"
-          :key="'text' + i"
-          :style="{top: z.positionY + 'px', left: z.positionX + 'px'}"
-          @mousedown="move($event, index, i, 2)"
-          >
-            <img
-              src="../../assets/img/contract/del.png"
-              class="del-pic"
-              @click="delect(index, i, 2)"
-              alt
-            />
-            {{z.value}}
-            <!-- 2020年03月24日 -->
-          </div>
-          <h1>{{item.page}}</h1>
+          <img class='contractPic' :src="item.url" alt="">
         </div>
       </div>
       <div class="right">
         <h3>合同签署</h3>
-        <h5>提示：点击签章，可将签章拖拽到合同内任意位置</h5>
+        <h5>提示：点击右下方签署按钮，即可用该签章签署</h5>
         <h4>
           <img src="../../assets/img/contract/launch.png" alt />个人印章
         </h4>
-        <div class="sign" @click="signShow">
-          <img src="../../assets/img/sign/sign.png" class="default-pic" alt />
+        <div class="sign">
+          <img :src="signObj.oss" class="default-pic" alt />
           <p>
             <img src="../../assets/img/contract/default.png" alt />默认签章
           </p>
@@ -97,41 +56,51 @@
         </div>
         <h3>待签署方</h3>
         <h4>
-          <img src="../../assets/img/contract/signer.png" alt />接收方
+          <img src="../../assets/img/contract/launch.png" alt />发起方
         </h4>
         <ul class="signer">
           <li>
             <div class="name">
-              姓名：
-              <span>闫泽鹏</span>
+                姓名：
+                <span>{{sponArray.name}}</span>
             </div>
             <div class="phone">
-              手机号：
-              <span>13262107141</span>
+                手机号：
+                <span>{{sponArray.phone}}</span>
+            </div>
+            <div class="date">
+                签署时间：
+                <span>{{sponArray.time}}</span>
             </div>
           </li>
         </ul>
+        
         <h4>
-          <img src="../../assets/img/contract/signer.png" alt />待签位置
+          <img src="../../assets/img/contract/signer.png" alt />接收方
         </h4>
-        <div class="toBesign" @click="regionShow">
-          <img src="../../assets/img/contract/signing.png" alt />待签署区域
-        </div>
-        <h4>
-          <img src="../../assets/img/contract/signer.png" alt />
-          设置编辑区域
-        </h4>
-        <h5>提示：点击输入框右侧按钮，可将签章拖拽到合同内任意位置，每个输入框最多可输入11个单位</h5>
-        <div style="width: 200px; margin: 0 auto;">
-          <Input v-model="value" style="width: 200px; margin: 0 auto;" maxlength="11" icon="md-return-left" @on-click="inputClick" />
-        </div>
+        <ul class="signer">
+          <li v-for='(item, index) in signatory' :key="index">
+            <div class="name">
+              姓名：
+              <span>{{item.name}}</span>
+            </div>
+            <div class="phone">
+              手机号：
+              <span>{{item.phone}}</span>
+            </div>
+            <div class="date">
+              签署时间：
+              <span>{{item.time}}</span>
+            </div>
+          </li>
+        </ul>
+        
         <div class="btn">
-          <Button>保存草稿</Button>
-          <Button type="primary" @click="modal = true">立即签署</Button>
+          <Button type="primary" @click="submit">立即签署</Button>
         </div>
         
         <!-- 验证是否本人操作 -->
-        <Modal class="modal" :mask-closable="false" v-model="modal">
+        <Modal class="modal" :mask-closable="false" v-model="codeModal">
           <div slot="header" class="top">
             短信验证码
           </div>
@@ -145,11 +114,12 @@
             <span class="label">验证码</span>
             <div class="input">
               <Input v-model="code" maxlength="4" placeholder="请输入验证码" />
-              <span class="sendCode">发送验证码</span>
+              <span v-if='isSend' class="sendCode" @click='sendCode'>发送验证码</span>
+              <span v-else class="sendCode sendCode-c">{{codeNum}}后重试</span>
             </div>
           </div>
           <div slot="footer" class="okBtn">
-            <Button @click="modal = false">取消</Button>
+            <Button @click="codeModal = false">取消</Button>
             <Button type="primary" @click="ok">确认</Button>
           </div>
         </Modal>
@@ -159,18 +129,16 @@
           <div slot="header" class="top">
             更换签章
           </div>
-
           <ul class="modal-content">
-            <li :class="[signDefault == index ? 'default' : '']" v-for="(item, index) in signAdminList" :key="index" @click="checkDefault(index)">
-              <img :src="item.url" alt="" class="sign-pic">
-              <div class="bottom" v-if="signDefault == index">
+            <li :class="[item.is_default ? 'default' : '']" v-for="(item, index) in signAdminList" :key="index" @click="checkDefault(item.id)">
+              <img :src="item.oss" alt="" class="sign-pic">
+              <div class="bottom" v-if="item.is_default">
                 <img src="../../assets/img/contract/default.png" alt />默认签章
               </div>
             </li>
           </ul>
           <div slot="footer" class="okBtn">
-            <Button @click="modalchangeSign = false">取消</Button>
-            <Button type="primary" @click="okchangeSign">确认</Button>
+
           </div>
         </Modal>
       </div>  
@@ -187,86 +155,70 @@ export default {
   },
   data() {
     return {
+      contractTitle: '', //合同title
       leftIndex: 0,
-      leftList: [
-        {
-          number: 1
-        },
-        {
-          number: 2
-        },
-        {
-          number: 3
-        },
-        {
-          number: 4
-        }
-      ],
-      positionX: 0, //签章X坐标
-      positionY: 0, //签章Y坐标
+      lefttopx: 0, //签章X坐标
+      lefttopy: 0, //签章Y坐标
       scrollTop: 0,
-      centerList: [
-        {
-          page: 1,
-          signList: [],
-          regionList: [],
-          text: []
-        },
-        {
-          page: 2,
-          signList: [],
-          regionList: [],
-          text: []
-        },
-        {
-          page: 3,
-          signList: [],
-          regionList: [],
-          text: []
-        },
-        {
-          page: 4,
-          signList: [],
-          regionList: [],
-          text: []
-        }
-      ],
+      centerList: [], //合同列表
+      signatory: [], //签署人列表
+      sponArray: {}, // 发起人信息
       signNum: 0,
       regionNum: 0,
       textNum: 0, 
       value: "",
-      modal: false,
-      phone: '13262107141',
-      code: '',
+      codeModal: false, // 短信验证modal
+      phone: '',
+      code: '', // 验证码 
       modalchangeSign: false,
-      signAdminList: [
-        {
-          url: require('../../assets/img/sign/sign.png')
-        },
-        {
-          url: require('../../assets/img/sign/sign.png')
-        },
-        {
-          url: require('../../assets/img/sign/sign.png')
-        },
-        {
-          url: require('../../assets/img/sign/sign.png')
-        },
-        {
-          url: require('../../assets/img/sign/sign.png')
-        },
-      ],
-      signDefault: 0,
+      signAdminList: [], // 签章list
+      signObj: {}, //默认签章
+      codeNum: 60, //验证码读秒
+      isSend: true, // 验证码切换
+      signFlag: false // 点击签署改变状态
     };
   },
   mounted() {
+    this.phone = JSON.parse(this.$vc.get('userInfo')).phone
     let center = document.getElementsByClassName("center")[0];
     center.addEventListener("scroll", this.showIcon);
     let date = new Date();
     date = moment(new Date()).format("YYYY年MM月DD日");
     this.value = date;
   },
+  created() {
+    this.showContract()
+    this.showSigntrue()
+  },
   methods: {
+    // 展示合同
+    showContract() {
+      this.$api.meSign({
+        con_id: this.$route.query.id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.contractTitle = res.data.title
+          this.centerList = res.data.imgs
+          this.sponArray = res.data.sponArray
+          this.signatory = res.data.signArray
+        }
+      })
+    },
+    // 签章
+    showSigntrue() {
+      this.$api.signList({
+
+      }).then(res=>{
+        if(res.code == 0) {
+          this.signAdminList = res.data
+          this.signAdminList.forEach((item, index)=>{
+            if(item.is_default) {
+              this.signObj = item
+            }
+          })
+        }
+      })
+    },
     // 点击左侧移动至对应合同页数
     jump(index) {
       this.leftIndex = index;
@@ -274,59 +226,24 @@ export default {
       center.scrollTop = index * 1052;
     },
 
-    // 展示默认签章
-    signShow() {
+    // 展示签署人签署区域
+    regionShow(item, i) {
       let index =
         this.scrollTop - 700 ? parseInt((this.scrollTop - 700) / 1052 + 1) : 0;
-      if (this.centerList[index].signList.length >= 10) {
+      if (this.centerList[index].signInfos_signatory.length >= 10) {
         this.$Message.error("每页最多10个签章");
       } else {
-        this.centerList[index].signList.push({
-          positionX: 0,
-          positionY: this.signNum
-        });
-        this.signNum += 20;
-      }
-
-      // this.$set(this.centerList[index].signList, this.centerList[index].signList.length, {
-      //   positionX: 0,
-      //   positionY: 0,
-      // })
-    },
-
-    // 展示签署区域
-    regionShow() {
-      let index =
-        this.scrollTop - 700 ? parseInt((this.scrollTop - 700) / 1052 + 1) : 0;
-      if (this.centerList[index].regionList.length >= 10) {
-        this.$Message.error("每页最多10个签章");
-      } else {
-        this.centerList[index].regionList.push({
-          positionX: 630,
-          positionY: this.regionNum
+        this.centerList[index].signInfos_signatory.push({
+          lefttopx: 630,
+          lefttopy: this.regionNum,
+          num: index + 1,
+          name: item.name,
+          id: item.id,
+          signer: i
         });
         this.regionNum += 20;
-      }
 
-      // this.$set(this.centerList[index].regionList, this.centerList[index].regionList.length, {
-      //   positionX: 0,
-      //   positionY: 0,
-      // })
-    },
-
-    // 展示自定义输入区域
-    inputClick() {
-      let index =
-        this.scrollTop - 700 ? parseInt((this.scrollTop - 700) / 1052 + 1) : 0;
-      if (this.centerList[index].text.length >= 10) {
-        this.$Message.error("每页最多10个自定义区域");
-      } else {
-        this.centerList[index].text.push({
-          positionX: 290,
-          positionY: this.textNum,
-          value: this.value
-        });
-        this.textNum += 20;
+        this.signatory[i].count ++
       }
     },
 
@@ -337,93 +254,99 @@ export default {
       this.leftIndex = parseInt(this.scrollTop / 1052);
     },
 
-    // 移动签章
-    move(e, index, i, flag) {
-      let odiv = e.currentTarget; //获取目标元素
-
-      //算出鼠标相对元素的位置
-      let disX = e.clientX - odiv.offsetLeft;
-      let disY = e.clientY - odiv.offsetTop;
-      document.onmousemove = e => {
-        //鼠标按下并移动的事件
-        //用鼠标的位置减去鼠标相对元素的位置，得到元素的位置
-        let left = e.clientX - disX;
-        let top = e.clientY - disY;
-
-        //绑定元素位置到positionX和positionY上面
-
-        //移动当前元素
-        /*top <= 0
-          ? (odiv.style.top = 0 + "px")
-          : top >= 930
-          ? (odiv.style.top = 930 + "px")
-          : (odiv.style.top = top + "px");
-        left <= 0
-          ? (odiv.style.left = 0 + "px")
-          : left >= 630
-          ? (odiv.style.left = 630 + "px")
-          : (odiv.style.left = left + "px");*/
-
-        if(flag == 2) {
-          top <= 0 ? (top = 0) : top >= 1020 ? (top = 1020) : (top = top);
-          left <= 0 ? (left = 0) : left >= 550 ? (left = 550) : (left = left);
-        } else {
-          top <= 0 ? (top = 0) : top >= 930 ? (top = 930) : (top = top);
-          left <= 0 ? (left = 0) : left >= 630 ? (left = 630) : (left = left);
-        }
-        
-
-        if (flag == 0) {
-          this.centerList[index].signList[i].positionX = left;
-          this.centerList[index].signList[i].positionY = top;
-        } else if(flag == 1){
-          this.centerList[index].regionList[i].positionX = left;
-          this.centerList[index].regionList[i].positionY = top;
-        } else {
-          this.centerList[index].text[i].positionX = left;
-          this.centerList[index].text[i].positionY = top;
-        }
-        // this.$forceUpdate();
-      };
-      document.onmouseup = e => {
-        document.onmousemove = null;
-        document.onmouseup = null;
-      };
-    },
-
     // 删除签章
     delect(index, i, flag) {
       if (flag == 0) {
-        this.centerList[index].signList.splice(i, 1);
-      } else if(flag == 1){
-        this.centerList[index].regionList.splice(i, 1);
+        this.centerList[index].signInfos_sponsor.splice(i, 1);
       } else {
-        this.centerList[index].text.splice(i, 1);
+        var signer = this.centerList[index].signInfos_signatory[i].signer  // 获取签署人的下标
+        this.centerList[index].signInfos_signatory.splice(i, 1);
+        this.signatory[signer].count --
       }
       // this.$forceUpdate();
     },
-
-    // 确认本人操作
+    //更换签章
+    checkDefault(id) {
+      this.$api.setDefault({
+        id: id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.showSigntrue()
+        }
+      })
+    },
+    // 发送验证码
+    sendCode() {
+      this.$api.getCode({
+        phone: this.phone
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.isSend = false
+          var t = setInterval(()=>{
+            this.codeNum --
+            if(this.codeNum <= 0) {
+              this.codeNum = 60
+              clearInterval(t)
+              this.isSend = true
+            } 
+          }, 1000)
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
+    },
+    // 验证验证码
     ok() {
       if (this.code) {
-        this.modal = false;
-        this.$Message.success("验证成功");
-        this.$router.push({name: 'signDetails'})
+        this.$api.checkSms({
+          phone: this.phone,
+          code: this.code
+        }).then(res=>{
+          this.modal = false;
+          
+        // loading
+        this.$Spin.show({
+            render: (h) => {
+                return h('div', [
+                    h('Icon', {
+                        'class': 'demo-spin-icon-load',
+                        props: {
+                            type: 'ios-loading',
+                            size: 18
+                        }
+                    }),
+                    h('div', 'Loading')
+                ])
+            }
+        });
+          var obj = JSON.stringify(this.signObj)
+          this.$api.meSignSave({
+            con_id: this.$route.query.id,
+            use_sign: obj
+          }).then(res=>{
+            if(res.code == 0) {
+              this.$Spin.hide();
+              this.$Message.success(res.msg)
+              this.$router.push({name: 'signDetails', query:{id:this.$route.query.id}})
+            } else {
+              this.$Spin.hide();
+              this.$Message.error(res.msg)
+            }
+          })
+        })
+        
       } else {
         this.modal = true;
         this.$Message.error("验证码不能为空");
       }
     },
-
-    //更换签章
-    checkDefault(index) {
-      this.signDefault = index
+    // 提交
+    submit() {
+        this.signFlag = true
+      this.codeModal = true
     },
-    // 确认更换签章
-    okchangeSign() {
-
-    },
-
     // 返回上一页
     back() {
       this.$router.go(-1);
@@ -433,7 +356,7 @@ export default {
 </script>
 
 <style scoped lang="less">
-.signContract {
+.signContent {
   width: 100%;
   height: 100%;
   background-color: #eaeaea;
@@ -481,10 +404,14 @@ export default {
       overflow-x: hidden;
       li {
         width: 240px;
-        height: 340px;
+        min-height: 340px;
         border: 1px solid #bfbfbf;
         margin-bottom: 30px;
         position: relative;
+        img{
+            width: 100%;
+            // height: 100%;
+        }
         .triangle {
           width: 0;
           height: 0;
@@ -541,6 +468,10 @@ export default {
         background-color: #fff;
         position: relative;
         margin-bottom: 10px;
+        .contractPic{
+          width: 100%;
+          height: 100%;
+        }
         .contract-sign {
           width: 120px;
           height: 120px;
@@ -548,23 +479,18 @@ export default {
           top: 0;
           left: 0;
           border: 1px dashed #127fd2;
-          cursor: move;
           .default-pic {
+            position: absolute;
+            top: 38px;
+            left: 0;
             width: 120px;
-            z-index: -999;
+            // z-index: -999;
           }
           .del-pic {
             position: absolute;
             top: -10px;
             right: -10px;
             cursor: pointer;
-          }
-          .mark {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 120px;
-            height: 120px;
           }
         }
         .sign-region {
@@ -649,10 +575,9 @@ export default {
       .toBesign {
         width: 200px;
         height: 180px;
-        margin: 0 auto;
         box-shadow: 0px 3px 16px 0px rgba(14, 57, 111, 0.24);
         position: relative;
-        margin-bottom: 20px;
+        margin: 20px auto;
         cursor: pointer;
         text-align: center;
         p {
@@ -678,8 +603,13 @@ export default {
           width: 150px;
           pointer-events: none;
           display: inline-block;
+          margin-top: 50px;
           z-index: -1;
         }
+      }
+      .toBesign{
+        height: 50px;
+        margin-bottom: 40px;
       }
       .change {
         width: 200px;
@@ -704,6 +634,10 @@ export default {
         li {
           margin-bottom: 10px;
           .name {
+            padding-left: 28px;
+            margin-bottom: 14px;
+          }
+          .phone{
             padding-left: 14px;
             margin-bottom: 14px;
           }
@@ -725,7 +659,8 @@ export default {
         display: flex;
         justify-content: space-between;
         .ivu-btn{
-          width: 100px;
+          width: 100%;
+          margin:0 auto ;
           height: 38px;
           color: #a3a3a3;
         }
@@ -756,7 +691,7 @@ export default {
 }
 </style>
 <style lang="less">
-.signContract {
+.signContent {
   .ivu-input-wrapper {
     .ivu-input-icon {
       cursor: pointer;
@@ -873,6 +808,8 @@ export default {
               text-align: center;
               position: relative;
               cursor: pointer;
+              display: flex;
+              align-items: center;
               .bottom{
                 position: absolute;
                 bottom:0;
@@ -890,13 +827,13 @@ export default {
                   margin-right: 10px;
                 }
               }
+              .sign-pic{
+                width: 100%;
+              }
             }
             .default{
               box-shadow:0px 0px 21px 0px rgba(14,57,111,0.2);
               border: 0;
-            }
-            .sign-pic{
-              width: 90%;
             }
           }
           /*滚动条整体样式*/

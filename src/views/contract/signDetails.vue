@@ -5,17 +5,18 @@
       <div class="back" @click="back">
         <img src="../../assets/img/contract/back.png" alt />
       </div>
-      <h2>合同名称</h2>
+      <h2>{{contractTitle}}</h2>
       <div></div>
     </div>
     <div class="content">
       <ul class="left">
         <li
-          v-for="(item, index) in leftList"
+          v-for="(item, index) in centerList"
           :key="index"
           :class="[leftIndex == index ? 'click' : '']"
           @click="jump(index)"
         >
+          <img :src="item.url" alt="">
           <div class="triangle">
             <p>{{index + 1}}</p>
           </div>
@@ -23,49 +24,31 @@
       </ul>
       <div class="center">
         <div class="contract" v-for="(item, index) in centerList" :key="index">
-          <!-- 自己默认签章 -->
-          <div
-            class="contract-sign"
-            v-for="(x, i) in item.signList"
-            :key="i"
-            :style="{top: x.positionY + 'px',left: x.positionX + 'px'}"
-          >
-            <div class="mark"></div>
-            <img src="../../assets/img/sign/sign.png" class="default-pic" alt />
-          </div>
-
-          <!-- 待他人签的签署区域 -->
-          <div
-            class="contract-sign sign-region"
-            v-for="(y, i) in item.regionList"
-            :key="'region' + i"
-            :style="{top: y.positionY + 'px', left: y.positionX + 'px'}"
-          >
-            <div class="mark"></div>
-            <p>闫泽鹏签署区域</p>
-          </div>
-
-          <!-- 自定义输入框 -->
-          <div
-            class="text"
-            v-for="(z, i) in item.text"
-            :key="'text' + i"
-            :style="{top: z.positionY + 'px', left: z.positionX + 'px'}"
-          >{{z.value}}</div>
-          <h1>{{item.page}}</h1>
+          <img class='contractPic' :src="item.url" alt="">
         </div>
       </div>
-
       <div class="right">
         <h3>文件信息</h3>
         <h4>
-          <img src="../../assets/img/contract/launch.png" alt />文件主题
+          <img src="../../assets/img/contract/launch.png" alt />合同名称
         </h4>
-        <p>保证合同-抵押担保</p>
+        <ul class="signer">
+          <li>
+            <div>
+                {{contractTitle}}
+            </div>
+          </li>
+        </ul>
         <h4>
           <img src="../../assets/img/contract/signer.png" alt />文件状态
         </h4>
-        <p style="color:#2D8CF0;">待他签</p>
+        <ul class="signer">
+          <li>
+            <div class="type" style='color: #2D8CF0'>
+                {{status}}
+            </div>
+          </li>
+        </ul>
         <h3>待签署方</h3>
         <h4>
           <img src="../../assets/img/contract/launch.png" alt />发起方
@@ -73,16 +56,16 @@
         <ul class="signer">
           <li>
             <div class="name">
-              姓名：
-              <span>闫泽鹏</span>
+                姓名：
+                <span>{{sponArray.name}}</span>
             </div>
             <div class="phone">
-              手机号：
-              <span>13262107141</span>
+                手机号：
+                <span>{{sponArray.phone}}</span>
             </div>
             <div class="date">
-              签署时间：
-              <span>2020-03-20 01:01:01</span>
+                签署时间：
+                <span>{{sponArray.time}}</span>
             </div>
           </li>
         </ul>
@@ -90,27 +73,130 @@
           <img src="../../assets/img/contract/signer.png" alt />接收方
         </h4>
         <ul class="signer">
-          <li>
+          <li v-for='(item, index) in signatory' :key="index">
             <div class="name">
               姓名：
-              <span>闫泽鹏</span>
+              <span>{{item.name}}</span>
             </div>
             <div class="phone">
               手机号：
-              <span>13262107141</span>
+              <span>{{item.phone}}</span>
+            </div>
+            <div class="date">
+                签署时间：
+                <span>{{item.time}}</span>
             </div>
           </li>
         </ul>
-        <h3>截止时间</h3>
-        <h4>
-          <img src="../../assets/img/contract/launch.png" alt />截止时间
-        </h4>
-        <p>2020-03-20 03：59：59</p>
-        <div class="btn">
-          <Button>撤回</Button>
-          <Button type="primary" @click="modal = true">短信提醒</Button>
+
+        <!-- 待我签 -->
+        <div v-if="status == '待我签'">
+          <h3>截止时间</h3>
+          <h4>
+            <img src="../../assets/img/contract/launch.png" alt />截止时间
+          </h4>
+          <ul class="signer">
+            <li>
+              <div class="date">
+                  {{end_time}}
+              </div>
+            </li>
+          </ul>
+          <div class="btn">
+            <Button type="primary" @click="toSigned">立即签署</Button>
+            <Button type="primary" @click="refuse">拒签</Button>
+          </div>
         </div>
-      </div>
+        <!-- 待TA签 -->
+        <div v-else-if="status == '待TA签'">
+          <h3>截止时间</h3>
+          <h4>
+            <img src="../../assets/img/contract/launch.png" alt />截止时间
+          </h4>
+          <ul class="signer">
+            <li>
+              <div class="date">
+                  {{end_time}}
+              </div>
+            </li>
+          </ul>
+          <div class="btn" v-if='is_sponsor'>
+            <Button type="primary" @click="remind">短信提醒</Button>
+            <Button type="primary" @click="withdraw">撤回</Button>
+          </div>
+          <div class="btn btn2" v-else>
+            <Button type="primary" @click="remind">短信提醒</Button>
+          </div>
+        </div>
+        <!-- 已完成 -->
+        <div v-else-if="status == '已完成'">
+          <h3>完成时间</h3>
+          <h4>
+            <img src="../../assets/img/contract/launch.png" alt />完成时间
+          </h4>
+          <ul class="signer">
+            <li>
+              <div class="date">
+                  {{complete_time}}
+              </div>
+            </li>
+          </ul>
+          <div class="btn">
+
+          </div>
+        </div>
+        <!-- 已过期 -->
+        <div v-else-if="status == '已过期'">
+          <h3>截止时间</h3>
+          <h4>
+            <img src="../../assets/img/contract/launch.png" alt />截止时间
+          </h4>
+          <ul class="signer">
+            <li>
+              <div class="date">
+                  {{end_time}}
+              </div>
+            </li>
+          </ul>
+          <div class="btn">
+
+          </div>
+        </div>
+        <!-- 已撤回 -->
+        <div v-else-if="status == '已撤回'">
+          <h3>撤回时间</h3>
+          <h4>
+            <img src="../../assets/img/contract/launch.png" alt />撤回时间
+          </h4>
+          <ul class="signer">
+            <li>
+              <div class="date">
+                  {{withdrawal_time}}
+              </div>
+            </li>
+          </ul>
+          <div class="btn">
+
+          </div>
+        </div>
+        <!-- 已拒签 -->
+        <div v-else-if="status == '已拒签'">
+          <h3>拒签时间</h3>
+          <h4>
+            <img src="../../assets/img/contract/launch.png" alt />拒签时间
+          </h4>
+          <ul class="signer">
+            <li>
+              <div class="date">
+                  {{rejection_time}}
+              </div>
+            </li>
+          </ul>
+          <div class="btn">
+
+          </div>
+        </div>
+      </div>  
     </div>
   </div>
 </template>
@@ -124,87 +210,111 @@ export default {
   },
   data() {
     return {
+      contractTitle: '', //合同title
       leftIndex: 0,
-      leftList: [
-        {
-          number: 1
-        },
-        {
-          number: 2
-        },
-        {
-          number: 3
-        },
-        {
-          number: 4
-        }
-      ],
       scrollTop: 0,
-      centerList: [
-        {
-          page: 1,
-          signList: [],
-          regionList: [],
-          text: []
-        },
-        {
-          page: 2,
-          signList: [],
-          regionList: [],
-          text: []
-        },
-        {
-          page: 3,
-          signList: [],
-          regionList: [],
-          text: []
-        },
-        {
-          page: 4,
-          signList: [],
-          regionList: [],
-          text: []
-        }
-      ],
-      signNum: 0,
-      regionNum: 0,
-      textNum: 0,
-      value: "",
-      modal: false,
-      phone: "13262107141",
-      code: "",
+      centerList: [], //合同列表
+      signatory: [], //签署人列表
+      code: '', // 验证码 
       modalchangeSign: false,
-      signAdminList: [
-        {
-          url: require("../../assets/img/sign/sign.png")
-        },
-        {
-          url: require("../../assets/img/sign/sign.png")
-        },
-        {
-          url: require("../../assets/img/sign/sign.png")
-        },
-        {
-          url: require("../../assets/img/sign/sign.png")
-        },
-        {
-          url: require("../../assets/img/sign/sign.png")
-        }
-      ],
-      signDefault: 0
+      signAdminList: [], // 签章list
+      signObj: {}, //默认签章
+      codeNum: 60, //验证码读秒
+      isSend: true, // 验证码切换
+      status: '', // 合同状态
+      sponArray: {}, //发起人信息合集
+      complete_time: '', //完成时间
+      end_time: '', // 截止时间
+      withdrawal_time: '', //撤回时间
+      rejection_time: '', //拒绝时间
+      is_sponsor: '', // 是否为发起人 0: 不是 1： 是
     };
   },
   mounted() {
-    let date = new Date();
-    date = moment(new Date()).format("YYYY年MM月DD日");
-    this.value = date;
+    let center = document.getElementsByClassName("center")[0];
+    center.addEventListener("scroll", this.showIcon);
+  },
+  created() {
+    this.showContract()
   },
   methods: {
+    // 展示合同
+    showContract() {
+      this.$api.view({
+        con_id: this.$route.query.id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.contractTitle = res.data.title
+          this.centerList = res.data.imgs
+          this.signatory = res.data.signArray
+          this.status = res.data.status
+          this.sponArray = res.data.sponArray
+          this.end_time = res.data.end_time
+          this.complete_time = res.data.complete_time
+          this.withdrawal_time = res.data.withdrawal_time
+          this.rejection_time = res.data.rejection_time
+          this.is_sponsor = res.data.is_sponsor
+        }
+      })
+    },
     // 点击左侧移动至对应合同页数
     jump(index) {
       this.leftIndex = index;
       let center = document.getElementsByClassName("center")[0];
       center.scrollTop = index * 1052;
+    },
+
+    // 记录scroolTio
+    showIcon() {
+      let center = document.getElementsByClassName("center")[0];
+      this.scrollTop = center.scrollTop;
+      this.leftIndex = parseInt(this.scrollTop / 1052);
+    },
+    // 提交
+    submit() {
+
+    },
+    // 去签署
+    toSigned() {
+      this.$router.push({name: 'signContract', query: {id: this.$route.query.id}})
+    },
+    // 拒签
+    refuse() {
+      this.$api.refuse({
+        con_id: this.$route.query.id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.showContract()
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
+    },
+    // 短信提醒
+    remind(row, index) {
+      this.$api.sendSmsTosignature({
+        con_id: this.$route.query.id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
+    },
+    // 撤回
+    withdraw() {
+      this.$api.withdraw({
+        con_id: this.$route.query.id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.showContract()
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
     },
     // 返回上一页
     back() {
@@ -237,34 +347,40 @@ export default {
     padding-left: 40px;
     background-color: #fff;
     box-shadow: 0px 3px 16px 0px rgba(14, 57, 111, 0.17);
-    z-index: 999;
+    // z-index: 999;
     h2 {
       font-size: 16px;
       color: #333333;
     }
-    .back {
+    .back{
       cursor: pointer;
     }
   }
   .content {
     margin-top: 60px;
     width: 100%;
-    height: calc(~ "100vh - 140px");
     display: flex;
     justify-content: space-between;
+    height: calc(~ "100vh - 140px");
+    // height: calc(100vh - 140px);
     .left {
       width: 320px;
       min-width: 320px;
       background-color: #fff;
+      // height: calc(100vh - 140px);
       padding: 50px 40px;
       overflow: auto;
       overflow-x: hidden;
       li {
         width: 240px;
-        height: 340px;
+        min-height: 340px;
         border: 1px solid #bfbfbf;
         margin-bottom: 30px;
         position: relative;
+        img{
+            width: 100%;
+            // height: 100%;
+        }
         .triangle {
           width: 0;
           height: 0;
@@ -286,9 +402,9 @@ export default {
         }
       }
       .click {
-        border: 1px solid #127fd2;
+        border: 1px solid #2c8cee;
         .triangle {
-          border-color: #127fd2 transparent transparent transparent;
+          border-color: #2c8cee transparent transparent transparent;
         }
       }
     }
@@ -312,6 +428,7 @@ export default {
     .center {
       min-width: 770px;
       background-color: #eaeaea;
+      // height: calc(100vh - 140px);
       overflow: auto;
       padding-top: 10px;
       .contract {
@@ -320,6 +437,10 @@ export default {
         background-color: #fff;
         position: relative;
         margin-bottom: 10px;
+        .contractPic{
+          width: 100%;
+          height: 100%;
+        }
         .contract-sign {
           width: 120px;
           height: 120px;
@@ -327,23 +448,18 @@ export default {
           top: 0;
           left: 0;
           border: 1px dashed #127fd2;
-          cursor: move;
           .default-pic {
+            position: absolute;
+            top: 38px;
+            left: 0;
             width: 120px;
-            z-index: -999;
+            // z-index: -999;
           }
           .del-pic {
             position: absolute;
             top: -10px;
             right: -10px;
             cursor: pointer;
-          }
-          .mark {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 120px;
-            height: 120px;
           }
         }
         .sign-region {
@@ -355,7 +471,7 @@ export default {
             color: #127fd2;
           }
         }
-        .text {
+        .text{
           width: 200px;
           height: 30px;
           border: 1px dashed #127fd2;
@@ -398,6 +514,7 @@ export default {
       width: 280px;
       min-width: 280px;
       background-color: #fff;
+      // height: calc(100vh - 140px);
       padding: 50px 20px;
       overflow: auto;
       h3 {
@@ -427,10 +544,9 @@ export default {
       .toBesign {
         width: 200px;
         height: 180px;
-        margin: 0 auto;
         box-shadow: 0px 3px 16px 0px rgba(14, 57, 111, 0.24);
         position: relative;
-        margin-bottom: 20px;
+        margin: 20px auto;
         cursor: pointer;
         text-align: center;
         p {
@@ -456,8 +572,13 @@ export default {
           width: 150px;
           pointer-events: none;
           display: inline-block;
+          margin-top: 50px;
           z-index: -1;
         }
+      }
+      .toBesign{
+        height: 50px;
+        margin-bottom: 40px;
       }
       .change {
         width: 200px;
@@ -470,6 +591,7 @@ export default {
         align-items: center;
         justify-content: space-around;
         padding: 0 57px;
+        margin: 0 auto;
         margin-bottom: 32px;
         cursor: pointer;
       }
@@ -484,9 +606,9 @@ export default {
             padding-left: 28px;
             margin-bottom: 14px;
           }
-          .phone {
-            margin-bottom: 14px;
+          .phone{
             padding-left: 14px;
+            margin-bottom: 14px;
           }
         }
       }
@@ -499,27 +621,26 @@ export default {
         color: #127fd2;
         border: 1px dashed #bfbfbf;
       }
-      .btn {
+      .btn{
         margin-top: 86px;
         width: 100%;
         height: 40px;
         display: flex;
         justify-content: space-between;
-        .ivu-btn {
+        .ivu-btn{
           width: 100px;
           height: 38px;
           color: #a3a3a3;
         }
         .ivu-btn-primary {
           color: #ffffff;
-          background-color: #127fd2;
+          background-color: #127FD2;
         }
       }
-      p {
-        font-size: 14px;
-        color: #777777;
-        padding-left: 22px;
-        margin-bottom: 16px;
+      .btn2{
+        .ivu-btn{
+          width: 100%;
+        }
       }
     }
     /*滚动条整体样式*/
@@ -541,4 +662,188 @@ export default {
     }
   }
 }
+</style>
+<style lang="less">
+.signDetails {
+  .ivu-input-wrapper {
+    .ivu-input-icon {
+      cursor: pointer;
+    }
+  }
+}
+.modal{
+    .ivu-modal {
+      top: 25%;
+      width: 600px !important;
+      height: 350px;
+      .ivu-modal-content {
+        width: 600px !important;
+        height: 350px;
+        .ivu-modal-header {
+          border: 0;
+          padding-top: 70px;
+          padding-bottom: 0;
+          margin-bottom: 60px;
+          .top {
+            display: flex;
+            justify-content: center;
+            font-size: 22px;
+            color:#333333;
+          }
+        }
+        .ivu-modal-body {
+          border: 0;
+          padding: 0 104px;
+          .modal-content {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-bottom: 20px;
+            .label {
+              font-size: 14px;
+              color: #333333;
+              margin-right: 10px;
+              font-weight: bold;
+            }
+            .input {
+              width: 340px;
+              height: 30px;
+              position: relative;
+              .sendCode {
+                position: absolute;
+                top: 7px;
+                right: 20px;
+                font-size: 14px;
+                color: #2981d9;
+                cursor: pointer;
+              }
+            }
+          }
+        }
+        .ivu-modal-footer {
+          border: 0;
+          padding: 0;
+          .okBtn {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            padding: 0 180px;
+            .ivu-btn {
+              width: 90px;
+              height: 40px;
+              border-radius: 4px;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  .modalchangeSign{
+    .ivu-modal {
+      top: 25%;
+      width: 840px !important;
+      height: 540px;
+      .ivu-modal-content {
+        width: 840px !important;
+        height: 540px;
+        .ivu-modal-header {
+          border: 0;
+          padding-top: 70px;
+          padding-bottom: 0;
+          margin-bottom: 50px;
+          .top {
+            display: flex;
+            justify-content: center;
+            font-size: 22px;
+            color:#333333;
+          }
+        }
+        .ivu-modal-body {
+          border: 0;
+          padding: 0;
+          padding: 0 40px;
+          
+          .modal-content{
+            display: flex;
+            flex-wrap: wrap;
+            height: 276px;
+            overflow: auto;
+            padding-left: 20px;
+            padding-top: 20px;
+            li{
+              border:1px solid #BFBFBF;
+              width: 220px;
+              height: 220px;
+              border-radius:4px;
+              margin-bottom: 20px;
+              margin-right: 20px;
+              text-align: center;
+              position: relative;
+              cursor: pointer;
+              display: flex;
+              align-items: center;
+              .bottom{
+                position: absolute;
+                bottom:0;
+                left:0;
+                background-color: #E2EEFF;
+                width: 100%;
+                height: 40px;
+                display: flex;
+                align-items: center;
+                padding-left: 20px;
+                color:#4680FF;
+                font-size: 14px;
+                border-radius: 0px 0px 4px 4px;
+                img{
+                  margin-right: 10px;
+                }
+              }
+              .sign-pic{
+                width: 100%;
+              }
+            }
+            .default{
+              box-shadow:0px 0px 21px 0px rgba(14,57,111,0.2);
+              border: 0;
+            }
+          }
+          /*滚动条整体样式*/
+          .modal-content::-webkit-scrollbar {
+            width: 10px;
+            height: 1px;
+          }
+          /*滚动条滑块*/
+          .modal-content::-webkit-scrollbar-thumb {
+            border-radius: 10px;
+            -webkit-box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
+            background: #b7b5b5;
+          }
+          /*滚动条轨道*/
+          .modal-content::-webkit-scrollbar-track {
+            -webkit-box-shadow: inset 0 0 1px rgba(0, 0, 0, 0);
+            border-radius: 10px;
+            background: #ddd;
+          }
+        }
+        
+        .ivu-modal-footer {
+          border: 0;
+          padding: 0;
+          .okBtn {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-around;
+            padding: 0 280px;
+            .ivu-btn {
+              width: 90px;
+              height: 40px;
+              border-radius: 4px;
+            }
+          }
+        }
+      }
+    }
+  }
 </style>

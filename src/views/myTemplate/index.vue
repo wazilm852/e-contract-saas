@@ -2,7 +2,7 @@
     <div class="myTemplate">
         <vheader></vheader>
         <div class="content">
-            <Tabs value="name1">
+            <Tabs value="name2">
                 <TabPane :label="tabValue" name="name1">
                     <div class="top">
                         <div class="left">
@@ -22,7 +22,7 @@
                                 {{item.title}}
                             </div>
                             <div class="operation">
-                                <div class="use" @click='toDetails(item.id, "sys")'>
+                                <div class="use" @click='toStart(item.id, "sys")'>
                                     <img src="@/assets/img/myTemplate/use.png" alt="">
                                     <span>使用</span>
                                 </div>
@@ -62,7 +62,7 @@
                                 {{item.title}}
                             </div>
                             <div class="operation">
-                                <div class="use use2" @click='toDetails(item.id, "user")'>
+                                <div class="use use2" @click='toStart(item.id, "user")'>
                                     <img src="@/assets/img/myTemplate/use.png" alt="">
                                     <span>使用</span>
                                 </div>
@@ -85,13 +85,17 @@
                 </TabPane>
             </Tabs>
         </div>
+        <!-- 实名认证modal -->
+        <authentication :flag='this.modalAuthentication' @clFlag="sendSonData"></authentication>
     </div>
 </template>
 <script>
 import vheader from "@/components/header.vue";
+import authentication from "@/components/authentication.vue";
 export default {
     components: {
-        vheader
+        vheader,
+        authentication
     },
     data() {
         return {
@@ -106,14 +110,19 @@ export default {
             templateList: [],   // 系统模板list
             templateValue2: '', // 我的模板搜索
             templateList2: [],  // 我的模板list
-            uploadFileUrl: "api/api/template/upload",
+            uploadFileUrl: "api/template/upload",
             token: {
                 token: JSON.parse(this.$vc.get('userInfo')).token
             },
-            tabValue: '系统模板'
+            tabValue: '系统模板',
+            isVerified: 0, //是否实名认证
+            modalAuthentication: false, // 实名认证弹框
         }
     },
     created() {
+        var userInfo = JSON.parse(this.$vc.get('userInfo'))
+        this.isVerified = userInfo.is_verified
+
         this.systemTemp()
         this.myTemp()
         this.classTemp()
@@ -185,8 +194,27 @@ export default {
             this.$router.push({name: 'lookTemplate', query: {id: id, type: type}})
         },
         // 使用跳转
-        toDetails(id, type) {
-            this.$router.push({name: 'editContract', query: {tem_id: id, type: type}})
+        toStart(id, type) {
+            // this.$router.push({name: 'startContract', query: {tem_id: id, type: type}})
+            if(this.isVerified) {
+                this.$api.toContract({
+                    id: id,
+                    tem_type: type
+                }).then(res=>{
+                    if(res.code == 0) {
+                        this.$router.push({name: 'startContract', query: {id: res.data, type: 'template'}})
+                    } else {
+                        this.$Message.error(res.msg)
+                    }
+                })
+            } else {
+                this.modalAuthentication = true
+            }
+            
+        },
+        // 关闭去认证弹框
+        sendSonData() {
+            this.modalAuthentication = false
         },
         // 删除用户模板
         del(id) {

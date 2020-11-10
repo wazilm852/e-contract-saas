@@ -20,9 +20,11 @@
                         <FormItem prop="code">
                             <Input v-model="formInline.code" class="styleInput" maxlength="4" prefix="md-key" placeholder="请输入验证码" @on-enter="handleSubmit('formInline')" />
                             <span class="get-code" v-show='ifGet == true' @click='getCode'>获取验证码</span>
-                            <span class="get-code-c" v-show='ifGet == false'>{{codCount}}</span>
+                            <span class="get-code-c" v-show='ifGet == false'>{{codCount}}秒后重试</span>
                         </FormItem>
-                        <Checkbox v-model="flag" class="flag">已经阅读并同意<span>《使用协议》</span>及<span>《隐私条款》</span> </Checkbox>
+                        <div class='protocol'>
+                            <Checkbox v-model="flag" class="flag">已经阅读 </Checkbox>并同意<span @click='protocol'>《使用协议》</span>及<span @click='terms'>《隐私条款》</span>
+                        </div>
                         <FormItem class="submit">
                             <Button type="primary" @click="handleSubmit('formInline')">提交</Button>
                         </FormItem>
@@ -116,8 +118,17 @@ export default {
                     }
                 })
             }
+        },
+        // 使用协议 
+        protocol() {
+            this.$router.push({name: 'protocol'})
+        },
+        // 隐私条款
+        terms() {
+            this.$router.push({name: 'terms'})
         }
-    }
+    },
+    
 }
 </script>
 <style lang="less" scoped>
@@ -198,6 +209,16 @@ export default {
                     margin-bottom: 10px;
                     span{
                         color:#135BB6;
+                    }
+                }
+                .protocol{
+                    font-size: 14px;
+                    .flag{
+                        margin: 0;
+                    }
+                    span{
+                        color:#135BB6;
+                        cursor: pointer;
                     }
                 }
             }

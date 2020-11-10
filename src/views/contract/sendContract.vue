@@ -1,9 +1,9 @@
 <template>
-  <div class="lookTemplate">
+  <div class="sendContract">
     <vheader></vheader>
     <div class="title">
       <div class="back" @click="back">
-        <img src="@/assets/img/contract/back.png" alt />
+        <img src="../../assets/img/contract/back.png" alt />
       </div>
       <h2>{{contractTitle}}</h2>
       <div></div>
@@ -24,41 +24,133 @@
       </ul>
       <div class="center">
         <div class="contract" v-for="(item, index) in centerList" :key="index">
-          <!-- 自定义输入框 -->
-          <div 
-          class="text" 
-          v-for="(z, i) in item.text"
-          :key="'text' + i"
-          :style="{top: z.lefttopy + 'px', left: z.lefttopx + 'px', width: z.width + 'px'}"
-          @mousedown="move($event, index, i)"
+          <!-- 自己默认签章 -->
+          <div
+            class="contract-sign"
+            v-for="(x, i) in item.signInfos_sponsor"
+            :key="i"
+            :style="{top: x.lefttopy + 'px',left: x.lefttopx + 'px'}"
+            @mousedown="move($event, index, i, 0)"
           >
+            <div class="mark"></div>
             <img
-              src="@/assets/img/contract/del.png"
+              src="../../assets/img/contract/del.png"
               class="del-pic"
-              @click="delect(index, i)"
+              @click="delect(index, i, 0)"
               alt
             />
-            <span 
-                @mousedown.stop="moveWidth($event, index, i)" 
-                class='move-pic'
-            ></span>
-            文本编辑区域
-            <!-- 2020年03月24日 -->
+            <img :src="signObj.oss" class="default-pic" alt />
           </div>
+
+          <!-- 待他人签的签署区域 -->
+          <div
+            class="contract-sign sign-region"
+            v-for="(y, i) in item.signInfos_signatory"
+            :key="'region' + i"
+            :style="{top: y.lefttopy + 'px', left: y.lefttopx + 'px'}"
+            @mousedown="move($event, index, i, 1)"
+          >
+            <div class="mark"></div>
+            <img
+              src="../../assets/img/contract/del.png"
+              class="del-pic"
+              @click="delect(index, i, 1)"
+              alt
+            />
+            <p>{{y.name}}签署区域</p>
+          </div>
+
           <img class='contractPic' :src="item.url" alt="">
         </div>
       </div>
       <div class="right">
-        <h3>模板设置</h3>
-        <h5>合同模板使用时，可能需要对局部进行编辑，而模板设置就是设置好哪些区域能够编辑。</h5>
-        <h3>设置编辑区域</h3>
-        <h5>提示：将文本编辑区域拖拽到合同内(编辑时，文本内容不能超出编辑区域长度)</h5>
-        <div style="width: 200px; margin: 0 auto;">
-          <Input v-model="value" disabled style="width: 200px; margin: 0 auto;" maxlength="11" icon="md-return-left" @on-click="inputClick" />
+        <h3>合同签署</h3>
+        <h5>提示：点击签章，可将签章拖拽到合同内任意位置</h5>
+        <h4>
+          <img src="../../assets/img/contract/launch.png" alt />个人印章
+        </h4>
+        <div class="sign" @click="signShow">
+          <img :src="signObj.oss" class="default-pic" alt />
+          <p>
+            <img src="../../assets/img/contract/default.png" alt />默认签章
+          </p>
         </div>
+        <div class="change" @click="modalchangeSign = true">
+          <img src="../../assets/img/contract/change.png" alt />
+          更换签章
+        </div>
+        <h3>待签署方</h3>
+        <h4>
+          <img src="../../assets/img/contract/signer.png" alt />接收方
+        </h4>
+        <ul class="signer">
+          <li v-for='(item, index) in signatory' :key="index">
+            <div class="name">
+              姓名：
+              <span>{{item.name}}</span>
+            </div>
+            <div class="phone">
+              手机号：
+              <span>{{item.phone}}</span>
+            </div>
+            <!-- <h4>
+              <img src="../../assets/img/contract/signer.png" alt />待签位置
+            </h4> -->
+            <div class="toBesign" @click="regionShow(item, index)">
+              <img src="../../assets/img/contract/signing.png" alt />签署位置{{item.count}}处
+            </div>
+          </li>
+        </ul>
+        
         <div class="btn">
-          <Button type="primary" @click="keep">保存</Button>
+          <Button @click='keepDraft'>保存草稿</Button>
+          <Button type="primary" @click="submit">立即签署</Button>
         </div>
+        
+        <!-- 验证是否本人操作 -->
+        <Modal class="modal" :mask-closable="false" v-model="codeModal">
+          <div slot="header" class="top">
+            短信验证码
+          </div>
+          <div class="modal-content">
+            <span class="label">手机号</span>
+            <div class="input">
+              <Input v-model="phone" disabled maxlength="11" />
+            </div>
+          </div>
+          <div class="modal-content">
+            <span class="label">验证码</span>
+            <div class="input">
+              <Input v-model="code" maxlength="4" placeholder="请输入验证码" />
+              <span v-if='isSend' class="sendCode" @click='sendCode'>发送验证码</span>
+              <span v-else class="sendCode sendCode-c">{{codeNum}}后重试</span>
+            </div>
+          </div>
+          <div slot="footer" class="okBtn">
+            <Button @click="codeModal = false">取消</Button>
+            <Button type="primary" @click="ok">确认</Button>
+          </div>
+        </Modal>
+
+        <!-- 更换签章 -->
+        <Modal class="modalchangeSign" :mask-closable="false" v-model="modalchangeSign">
+          <div slot="header" class="top">
+            更换签章
+          </div>
+
+          <ul class="modal-content">
+            <li :class="[item.is_default ? 'default' : '']" v-for="(item, index) in signAdminList" :key="index" @click="checkDefault(item.id)">
+              <img :src="item.oss" alt="" class="sign-pic">
+              <div class="bottom" v-if="item.is_default">
+                <img src="../../assets/img/contract/default.png" alt />默认签章
+              </div>
+            </li>
+          </ul>
+          <div slot="footer" class="okBtn">
+            <!-- <Button @click="modalchangeSign = false">取消</Button>
+            <Button type="primary" @click="okchangeSign">确认</Button> -->
+          </div>
+        </Modal>
       </div>  
     </div>
   </div>
@@ -73,46 +165,71 @@ export default {
   },
   data() {
     return {
-      contractTitle: '', //合同名称
+      contractTitle: '', //合同title
       leftIndex: 0,
-      positionX: 0, //签章X坐标
-      positionY: 0, //签章Y坐标
+      lefttopx: 0, //签章X坐标
+      lefttopy: 0, //签章Y坐标
       scrollTop: 0,
-      centerList: [], // 合同list
+      centerList: [], //合同列表
+      signatory: [], //签署人列表
+      ponsor: '', // 发起人信息
       signNum: 0,
       regionNum: 0,
       textNum: 0, 
-      value: "设置文本编辑区域",
-      modal: false,
-      phone: '13262107141',
-      code: '',
+      value: "",
+      codeModal: false, // 短信验证modal
+      phone: '',
+      code: '', // 验证码 
       modalchangeSign: false,
-      signDefault: 0,
-      textList: [], // 自定义文本框list
+      signAdminList: [], // 签章list
+      signObj: {}, //默认签章
+      codeNum: 60, //验证码读秒
+      isSend: true, // 验证码切换
     };
   },
   mounted() {
+    this.phone = JSON.parse(this.$vc.get('userInfo')).phone
     let center = document.getElementsByClassName("center")[0];
     center.addEventListener("scroll", this.showIcon);
-    // let date = new Date();
-    // date = moment(new Date()).format("YYYY年MM月DD日");
-    // this.value = date;
+    let date = new Date();
+    date = moment(new Date()).format("YYYY年MM月DD日");
+    this.value = date;
   },
   created() {
-      this.contractShow();
+    this.showContract()
+    this.showSigntrue()
   },
   methods: {
     // 展示合同
-    contractShow() {
-        this.$api.lookTemplate({
-            id: this.$route.query.id,
-            type: this.$route.query.type,
-        }).then(res=>{
-            if(res.code == 0) {
-                this.contractTitle = res.data.title
-                this.centerList = res.data.imgs
+    showContract() {
+      this.$api.setsignature({
+        con_id: this.$route.query.id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.contractTitle = res.data.title
+          this.centerList = res.data.imgs
+          this.signatory = res.data.userList.signatory
+          this.ponsor = res.data.userList.ponsor
+          // this.signatory.forEach(item => {
+          //   item.count = 0
+          // });
+        }
+      })
+    },
+    // 签章
+    showSigntrue() {
+      this.$api.signList({
+
+      }).then(res=>{
+        if(res.code == 0) {
+          this.signAdminList = res.data
+          this.signAdminList.forEach((item, index)=>{
+            if(item.is_default) {
+              this.signObj = item
             }
-        })
+          })
+        }
+      })
     },
     // 点击左侧移动至对应合同页数
     jump(index) {
@@ -121,28 +238,42 @@ export default {
       center.scrollTop = index * 1052;
     },
 
-    // 展示自定义输入区域
-    inputClick() {
+    // 展示发起人签署区域
+    signShow() {
       let index =
         this.scrollTop - 700 ? parseInt((this.scrollTop - 700) / 1052 + 1) : 0;
-      if (this.centerList[index].text.length >= 10) {
-        this.$Message.error("每页最多10个自定义区域");
+      if (this.centerList[index].signInfos_sponsor.length >= 10) {
+        this.$Message.error("每页最多10个签章");
       } else {
-        this.centerList[index].text.push({
-          lefttopx: 290,
-          lefttopy: this.textNum,
-          num: index + 1,
-          width: 200,
-          height: 20
+        this.centerList[index].signInfos_sponsor.push({
+          lefttopx: 0,
+          lefttopy: this.signNum,
+          num: index + 1
         });
-        this.textNum += 20;
-        // this.textList.push({
-        //   lefttopx: 290,
-        //   lefttopy: this.textNum,
-        //   num: index + 1,
-        //   width: 200,
-        //   height: 20
-        // })
+        this.signNum += 20;
+
+        this.ponsor.count ++
+      }
+    },
+
+    // 展示签署人签署区域
+    regionShow(item, i) {
+      let index =
+        this.scrollTop - 700 ? parseInt((this.scrollTop - 700) / 1052 + 1) : 0;
+      if (this.centerList[index].signInfos_signatory.length >= 10) {
+        this.$Message.error("每页最多10个签章");
+      } else {
+        this.centerList[index].signInfos_signatory.push({
+          lefttopx: 630,
+          lefttopy: this.regionNum,
+          num: index + 1,
+          name: item.name,
+          id: item.id,
+          signer: i
+        });
+        this.regionNum += 20;
+
+        this.signatory[i].count ++
       }
     },
 
@@ -152,31 +283,9 @@ export default {
       this.scrollTop = center.scrollTop;
       this.leftIndex = parseInt(this.scrollTop / 1052);
     },
-    // 拖拽长度
-    moveWidth(e, index, i) {
-        let odiv = e.currentTarget;
-        var ol = odiv.offsetLeft
-        var oldX = e.clientX
-        document.onmousemove = e => {
-            var add = e.clientX - oldX
-            var moveLen = ol + add
-            if(moveLen <= 94) {
-              moveLen = 94
-              this.centerList[index].text[i].width = moveLen;
-            } else if(moveLen > 750) {
-              moveLen = 750
-              this.centerList[index].text[i].width = moveLen;
-            } else {
-              this.centerList[index].text[i].width = moveLen;
-            }
-        };
-        document.onmouseup = e => {
-            document.onmousemove = null;
-            document.onmouseup = null;
-        };
-    },
-    // 移动文本框
-    move(e, index, i) {
+
+    // 移动签章
+    move(e, index, i, flag) {
       let odiv = e.currentTarget; //获取目标元素
 
       //算出鼠标相对元素的位置
@@ -188,7 +297,7 @@ export default {
         let left = e.clientX - disX;
         let top = e.clientY - disY;
 
-        //绑定元素位置到positionX和positionY上面
+        //绑定元素位置到lefttopx和lefttopy上面
 
         //移动当前元素
         /*top <= 0
@@ -202,12 +311,18 @@ export default {
           ? (odiv.style.left = 630 + "px")
           : (odiv.style.left = left + "px");*/
 
-        top <= 0 ? (top = 0) : top >= 1020 ? (top = 1020) : (top = top);
-        var maxLeft = 760 - this.centerList[index].text[i].width
-        left <= 0 ? (left = 0) : left >= maxLeft ? (left = maxLeft) : (left = left);
+      
+          top <= 0 ? (top = 0) : top >= 930 ? (top = 930) : (top = top);
+          left <= 0 ? (left = 0) : left >= 630 ? (left = 630) : (left = left);
         
-        this.centerList[index].text[i].lefttopx = left;
-        this.centerList[index].text[i].lefttopy = top;
+
+        if (flag == 0) {
+          this.centerList[index].signInfos_sponsor[i].lefttopx = left;
+          this.centerList[index].signInfos_sponsor[i].lefttopy = top;
+        } else {
+          this.centerList[index].signInfos_signatory[i].lefttopx = left;
+          this.centerList[index].signInfos_signatory[i].lefttopy = top;
+        }
         // this.$forceUpdate();
       };
       document.onmouseup = e => {
@@ -215,30 +330,139 @@ export default {
         document.onmouseup = null;
       };
     },
-    // 删除自定义输入框
-    delect(index, i) {
-        // this.centerList[index].text.splice(i, 1);
-        this.centerList[index].text.splice(i, 1)
+
+    // 删除签章
+    delect(index, i, flag) {
+      if (flag == 0) {
+        this.centerList[index].signInfos_sponsor.splice(i, 1);
+        this.ponsor.count --
+      } else {
+        var signer = this.centerList[index].signInfos_signatory[i].signer  // 获取签署人的下标
+        this.centerList[index].signInfos_signatory.splice(i, 1);
+        this.signatory[signer].count --
+      }
       // this.$forceUpdate();
     },
-    // 保存
-    keep() {
-        this.centerList.forEach((item, index) => {
-          this.textList.push(item.text)
-        })
-        // var arr = JSON.stringify(this.centerList)
-        var arr = JSON.stringify(this.textList)
-        this.$api.saveTemp({
-            id: this.$route.query.id,
-            list: arr
+    //更换签章
+    checkDefault(id) {
+      this.$api.setDefault({
+        id: id
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.showSigntrue()
+        }
+      })
+    },
+    // 发送验证码
+    sendCode() {
+      this.$api.getCode({
+        phone: this.phone
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+          this.isSend = false
+          var t = setInterval(()=>{
+            this.codeNum --
+            if(this.codeNum <= 0) {
+              this.codeNum = 60
+              clearInterval(t)
+              this.isSend = true
+            } 
+          }, 1000)
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
+    },
+    // 验证验证码
+    ok() {
+      if (this.code) {
+        this.$api.checkSms({
+          phone: this.phone,
+          code: this.code
         }).then(res=>{
-           if(res.code == 0) {
-             this.$Message.success(res.msg)
-             this.contractShow()
-             this.textList = []
-             this.$router.push({name: 'myTemplate'})
-           }
+          if(res.code == 0) {
+            this.modal = false;
+            // loading
+            this.$Spin.show({
+                render: (h) => {
+                    return h('div', [
+                        h('Icon', {
+                            'class': 'demo-spin-icon-load',
+                            props: {
+                                type: 'ios-loading',
+                                size: 18
+                            }
+                        }),
+                        h('div', 'Loading')
+                    ])
+                }
+            });
+            var list = JSON.parse(JSON.stringify(this.centerList)) 
+            list.forEach(item=>{
+              delete item.url
+            })
+            var arr = JSON.stringify(list)
+            var obj = JSON.stringify(this.signObj)
+            this.$api.sponSignSave({
+              con_id: this.$route.query.id,
+              SignInfos: arr,
+              use_sign: obj
+            }).then(res=>{
+              if(res.code == 0) {
+                this.$Spin.hide();
+                this.$Message.success(res.msg)
+                this.$router.push({name: 'signDetails', query:{id:this.$route.query.id}})
+              } else {
+                this.$Spin.hide();
+                this.$Message.error(res.msg)
+              }
+            })
+          } else {
+            this.$Message.error(res.msg)
+          }
         })
+      } else {
+        this.modal = true;
+        this.$Message.error("验证码不能为空");
+      }
+    },
+    // 提交
+    submit() {
+      var flag = true
+      this.signatory.forEach(item => {
+        if(item.count == 0) {
+          flag = false
+          return
+        }
+      });
+
+      
+      if(flag && this.ponsor.count > 0) {
+        this.codeModal = true
+      } else {
+        this.$Message.warning('请给每个签署人最少一处签名区域')
+      }
+
+    },
+    // 保存草稿
+    keepDraft() {
+      var list = JSON.parse(JSON.stringify(this.centerList)) 
+      list.forEach(item=>{
+        delete item.url
+      })
+      var arr = JSON.stringify(list)
+      this.$api.save({
+        con_id: this.$route.query.id,
+        SignInfos: arr
+      }).then(res=>{
+        if(res.code == 0) {
+          this.$Message.success(res.msg)
+        } else {
+          this.$Message.error(res.msg)
+        }
+      })
     },
     // 返回上一页
     back() {
@@ -249,7 +473,7 @@ export default {
 </script>
 
 <style scoped lang="less">
-.lookTemplate {
+.sendContract {
   width: 100%;
   height: 100%;
   background-color: #eaeaea;
@@ -361,6 +585,10 @@ export default {
         background-color: #fff;
         position: relative;
         margin-bottom: 10px;
+        .contractPic{
+          width: 100%;
+          height: 100%;
+        }
         .contract-sign {
           width: 120px;
           height: 120px;
@@ -372,6 +600,7 @@ export default {
           .default-pic {
             width: 120px;
             z-index: -999;
+            margin-top: 38px;
           }
           .del-pic {
             position: absolute;
@@ -398,51 +627,21 @@ export default {
         }
         .text{
           width: 200px;
-          height: 20px;
+          height: 30px;
           border: 1px dashed #127fd2;
-          line-height: 20px;
+          line-height: 30px;
           position: absolute;
           cursor: move;
-          text-align: center;
           .del-pic {
-            width: 14px;
             position: absolute;
-            top: -8px;
-            right: -8px;
+            top: -10px;
+            right: -10px;
             cursor: pointer;
-            display: none;
           }
-          .move-pic{
-            width: 2px;
-            height: 20px;
-            position: absolute;
-            bottom: -8px;
-            right: -8px;
-            cursor: e-resize;
-          }
-          .move-pic::before{
-                content: '';
-                background: url('../../assets/img/contract/move.png')no-repeat;
-                background-size: 14px;
-                width: 14px;
-                height: 14px;
-                position: absolute;
-                bottom: 0;
-                right: 0;
-                cursor: e-resize;
-            }
-        }
-        
-        .text:hover .del-pic {
-            display: block;
         }
         h1 {
           text-align: center;
           font-size: 100px;
-        }
-        .contractPic{
-            width: 100%;
-            height: 100%;
         }
       }
     }
@@ -499,10 +698,9 @@ export default {
       .toBesign {
         width: 200px;
         height: 180px;
-        margin: 0 auto;
         box-shadow: 0px 3px 16px 0px rgba(14, 57, 111, 0.24);
         position: relative;
-        margin-bottom: 20px;
+        margin: 20px auto;
         cursor: pointer;
         text-align: center;
         p {
@@ -528,8 +726,13 @@ export default {
           width: 150px;
           pointer-events: none;
           display: inline-block;
+          margin-top: 50px;
           z-index: -1;
         }
+      }
+      .toBesign{
+        height: 50px;
+        margin-bottom: 40px;
       }
       .change {
         width: 200px;
@@ -575,7 +778,7 @@ export default {
         display: flex;
         justify-content: space-between;
         .ivu-btn{
-          width: 100%;
+          width: 100px;
           height: 38px;
           color: #a3a3a3;
         }
@@ -606,7 +809,7 @@ export default {
 }
 </style>
 <style lang="less">
-.lookTemplate {
+.sendContract {
   .ivu-input-wrapper {
     .ivu-input-icon {
       cursor: pointer;
@@ -658,6 +861,9 @@ export default {
                 font-size: 14px;
                 color: #2981d9;
                 cursor: pointer;
+              }
+              .sendCode-c{
+                color: #999;
               }
             }
           }
@@ -723,6 +929,8 @@ export default {
               text-align: center;
               position: relative;
               cursor: pointer;
+              display: flex;
+              align-items: center;
               .bottom{
                 position: absolute;
                 bottom:0;
@@ -740,13 +948,13 @@ export default {
                   margin-right: 10px;
                 }
               }
+              .sign-pic{
+                width: 100%;
+              }
             }
             .default{
               box-shadow:0px 0px 21px 0px rgba(14,57,111,0.2);
               border: 0;
-            }
-            .sign-pic{
-              width: 90%;
             }
           }
           /*滚动条整体样式*/

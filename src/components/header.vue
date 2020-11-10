@@ -116,6 +116,7 @@ export default {
         downClick(name) {
             if(name == '退出') {
                 this.$vc.set('userInfo', '')
+                this.$vc.set('clientID', '')
                 this.$router.push({name: 'login'})
             } else {
                 this.$router.push({name: 'message'})

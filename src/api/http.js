@@ -1,5 +1,6 @@
 import axios from 'axios'
-import router from 'vue-router'
+import VueRouter from 'vue-router'
+import router from '../router/index'
 import { Message } from 'view-design'
 import vc from 'vue-cookie'
 // import * as $globalFun from '../assets/js/common'
@@ -15,14 +16,13 @@ const tip = (msg) => {
     duration: 10
   });
 };
+const VueRouterReplace = VueRouter.prototype.replace
+VueRouter.prototype.replace = function replace (to) {
+  return VueRouterReplace.call(this, to).catch(err => err)
+}
 /* 跳转登录页，携带当前页面路由，以期在登录页面完成登录后返回当前页面，适用于未登录也能进行查看的页面 */
 const toLogin = () => {
-  router.replace({
-    path: '/home/login',
-    query: {
-      // redirect: router.currentRoute.fullPath
-    }
-  })
+  router.replace({path: '/'})
 };
 /**
  * 请求失败后的错误统一处理
@@ -80,6 +80,14 @@ Axios.interceptors.request.use((config) => {
 });
 
 Axios.interceptors.response.use((res) => {
+  if(res.data.code == 403) {
+    vc.set('userInfo', '')
+    // setTimeout(() => {
+    //   toLogin();
+    // }, 1000);
+    toLogin();
+  }
+
   if (res.status === 200) {
     return Promise.resolve(res);
   } else {
